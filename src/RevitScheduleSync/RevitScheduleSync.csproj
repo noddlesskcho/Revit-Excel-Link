@@ -1,0 +1,92 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Revit Schedule Sync - Revit 2026.5 add-in.
+    Revit 2026.5 hosts the .NET 10 runtime (see RevitAPI.runtimeconfig.json in the Revit install folder),
+    so the add-in targets net10.0-windows, x64 only.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <PlatformTarget>x64</PlatformTarget>
+    <Platforms>x64</Platforms>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <RootNamespace>RevitScheduleSync</RootNamespace>
+    <AssemblyName>RevitScheduleSync</AssemblyName>
+
+    <Version>0.1.0</Version>
+    <Product>Revit Schedule Sync</Product>
+    <Company>Revit Schedule Sync</Company>
+
+    <!-- Plugin-style output: copy NuGet dependencies next to the add-in DLL and emit a .deps.json
+         so Revit's isolated add-in load context can resolve ClosedXML and its dependencies. -->
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+
+    <!-- MSB3277: Revit's own internal assemblies (pulled in through RevitAPIUI.dll) reference older
+         System.Drawing / Microsoft.VisualBasic facade versions. Revit supplies them at runtime and
+         they are never copied, so the version conflict is harmless for this add-in. -->
+    <MSBuildWarningsAsMessages>$(MSBuildWarningsAsMessages);MSB3277</MSBuildWarningsAsMessages>
+
+    <RevitVersion>2026</RevitVersion>
+    <RevitInstallDir Condition="'$(RevitInstallDir)' == ''">C:\Program Files\Autodesk\Revit $(RevitVersion)\</RevitInstallDir>
+    <RevitAddinsDir>$(APPDATA)\Autodesk\Revit\Addins\$(RevitVersion)\</RevitAddinsDir>
+
+    <!-- Copy the build output into the per-user Revit add-ins folder after each Debug build.
+         Disable with: dotnet build -p:DeployToRevit=false -->
+    <DeployToRevit Condition="'$(DeployToRevit)' == '' and '$(Configuration)' == 'Debug'">true</DeployToRevit>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Revit API assemblies are supplied by Revit at runtime: never copy them to the output. -->
+    <Reference Include="RevitAPI">
+      <HintPath>$(RevitInstallDir)RevitAPI.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="RevitAPIUI">
+      <HintPath>$(RevitInstallDir)RevitAPIUI.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="ClosedXML" Version="0.105.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="RevitScheduleSync.addin">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <Target Name="CheckRevitInstall" BeforeTargets="ResolveAssemblyReferences">
+    <Error Condition="!Exists('$(RevitInstallDir)RevitAPI.dll')"
+           Text="RevitAPI.dll not found in '$(RevitInstallDir)'. Install Revit $(RevitVersion) or pass -p:RevitInstallDir=&lt;folder&gt;\" />
+  </Target>
+
+  <!--
+    Deploy layout:
+      %APPDATA%\Autodesk\Revit\Addins\2026\RevitScheduleSync.addin
+      %APPDATA%\Autodesk\Revit\Addins\2026\RevitScheduleSync\RevitScheduleSync.dll (+ dependencies)
+    Fails with a warning (not an error) when Revit is running and holds the DLL open.
+  -->
+  <Target Name="DeployToRevitAddins" AfterTargets="Build" Condition="'$(DeployToRevit)' == 'true'">
+    <ItemGroup>
+      <_DeployFiles Include="$(OutDir)**\*" Exclude="$(OutDir)**\*.addin;$(OutDir)**\*.pdb.tmp" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_DeployFiles)"
+          DestinationFolder="$(RevitAddinsDir)RevitScheduleSync\%(RecursiveDir)"
+          SkipUnchangedFiles="true"
+          ContinueOnError="WarnAndContinue" />
+    <Copy SourceFiles="$(OutDir)RevitScheduleSync.addin"
+          DestinationFolder="$(RevitAddinsDir)"
+          SkipUnchangedFiles="true"
+          ContinueOnError="WarnAndContinue" />
+    <Message Importance="high" Text="Deployed Revit Schedule Sync to $(RevitAddinsDir)" />
+  </Target>
+
+</Project>

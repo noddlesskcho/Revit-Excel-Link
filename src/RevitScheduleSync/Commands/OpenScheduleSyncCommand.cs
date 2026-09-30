@@ -7,6 +7,7 @@ using RevitScheduleSync.Excel;
 using RevitScheduleSync.Models;
 using RevitScheduleSync.Revit;
 using RevitScheduleSync.Revit.Schedules;
+using RevitScheduleSync.Services;
 using RevitScheduleSync.UI;
 using RevitScheduleSync.UI.ViewModels;
 using RevitScheduleSync.UI.Views;
@@ -45,7 +46,7 @@ namespace RevitScheduleSync.Commands
                 var operations = new RevitScheduleOperations(
                     uiApplication.Application, document, new ClosedXmlWorkbookWriter(logger), new ClosedXmlWorkbookReader(logger), logger);
                 var viewModel = new MainViewModel(
-                    session, scheduleScan, operations, () => SaveDialogs.ChooseExportPath(document), SaveDialogs.ChooseImportPath, logger);
+                    session, scheduleScan, operations, () => SaveDialogs.ChooseExportPath(document), SaveDialogs.ChooseImportPath, new TaskDialogPrompts(), logger);
                 var window = new ScheduleSyncWindow(viewModel);
 
                 // Parent the window to Revit so it stays on top of Revit and centres on it.

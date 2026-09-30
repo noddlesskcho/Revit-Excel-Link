@@ -7,23 +7,26 @@ using RevitScheduleSync.Services;
 namespace RevitScheduleSync.UI.ViewModels
 {
     /// <summary>
-    /// Import section: Select Workbook › Analyse › Compare › Validate › (Apply, Report in later phases).
-    /// Analysis never writes to the model.
+    /// Import section: Select Workbook › Analyse › Compare › Validate › Review › (Apply, Report in Phase 7).
+    /// Analysis and review never write to the model.
     /// </summary>
     public sealed class ImportViewModel : SectionViewModel
     {
         private readonly IScheduleOperations _operations;
         private readonly Func<string?> _chooseImportPath;
+        private readonly IUserPrompts _prompts;
         private readonly Action<string, Exception> _reportError;
         private readonly ILogger _logger;
         private ViewModelBase _currentStep;
 
         public ImportViewModel(
-            IScheduleOperations operations, Func<string?> chooseImportPath, ILogger logger, Action<string, Exception> reportError)
+            IScheduleOperations operations, Func<string?> chooseImportPath, IUserPrompts prompts, ILogger logger,
+            Action<string, Exception> reportError)
             : base("Import")
         {
             _operations = operations;
             _chooseImportPath = chooseImportPath;
+            _prompts = prompts;
             _logger = logger;
             _reportError = reportError;
             Start = new ImportStartViewModel(ChooseAndAnalyse, reportError);
@@ -64,8 +67,9 @@ namespace RevitScheduleSync.UI.ViewModels
                 Mouse.OverrideCursor = previous;
             }
 
-            CurrentStep = new ImportAnalysisViewModel(
+            CurrentStep = new ChangeReviewViewModel(
                 changes,
+                _prompts,
                 back: () => CurrentStep = Start,
                 reanalyse: () => Analyse(path),
                 _reportError);

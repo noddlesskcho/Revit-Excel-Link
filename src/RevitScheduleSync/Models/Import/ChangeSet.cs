@@ -43,6 +43,36 @@ namespace RevitScheduleSync.Models.Import
         Duplicate
     }
 
+    /// <summary>Why an item is a conflict; decides which review actions are possible.</summary>
+    public enum ConflictKind
+    {
+        None,
+
+        /// <summary>Revit and Excel both changed the value differently since export: user picks one.</summary>
+        ThreeWay,
+
+        /// <summary>Several rows/sheets set different values for the same element or type: fix in Excel.</summary>
+        Disagreement,
+
+        /// <summary>The element's type was swapped in Revit since export: type value not applicable.</summary>
+        TypeSwapped
+    }
+
+    /// <summary>The reviewer's decision for one item. Only Apply / UseExcel ever lead to a write.</summary>
+    public enum ReviewDecision
+    {
+        /// <summary>No action possible (informational or problem item).</summary>
+        None,
+
+        /// <summary>Needs an explicit decision (type changes, three-way conflicts). Not applied.</summary>
+        Pending,
+
+        Apply,
+        Skip,
+        KeepRevit,
+        UseExcel
+    }
+
     /// <summary>Kind-specific value ready to be written in the Apply phase (internal units, resolved ids).</summary>
     public sealed record TargetValue(ValueStorage Storage, string? Text, int? Integer, double? Double, long? ElementIdValue, bool Clear)
     {
@@ -84,7 +114,17 @@ namespace RevitScheduleSync.Models.Import
 
         public string Message { get; set; } = string.Empty;
 
+        public ConflictKind ConflictKind { get; set; }
+
+        /// <summary>Review decision (Phase 6). Set by the analyser to a safe default.</summary>
+        public ReviewDecision Decision { get; set; }
+
         public bool IsApplicable => Status is ChangeStatus.Change or ChangeStatus.TypeChange;
+
+        /// <summary>True when the Apply phase will write this item's Excel value.</summary>
+        public bool WillWrite => Target != null && (
+            (Status is ChangeStatus.Change or ChangeStatus.TypeChange && Decision == ReviewDecision.Apply)
+            || (Status == ChangeStatus.Conflict && ConflictKind == ConflictKind.ThreeWay && Decision == ReviewDecision.UseExcel));
     }
 
     public enum FingerprintMatch

@@ -42,8 +42,8 @@
                 <views:ImportStartView />
             </DataTemplate>
 
-            <DataTemplate DataType="{x:Type vm:ImportAnalysisViewModel}">
-                <views:ImportAnalysisView />
+            <DataTemplate DataType="{x:Type vm:ChangeReviewViewModel}">
+                <views:ChangeReviewView />
             </DataTemplate>
 
             <DataTemplate DataType="{x:Type vm:WorkflowSectionViewModel}">

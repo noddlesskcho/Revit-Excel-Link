@@ -83,6 +83,8 @@ namespace RevitScheduleSync.Revit.Import
                 CheckWorksharing(items);
             }
 
+            SetDefaultDecisions(items);
+
             stopwatch.Stop();
             var set = new ChangeSet
             {
@@ -204,13 +206,34 @@ namespace RevitScheduleSync.Revit.Import
             };
 
             TargetValue? targetValue = parsed.Target;
+            var conflictKind = ConflictKind.None;
             if (threeWay == ThreeWay.ExcelChange)
             {
                 (status, message, targetValue) = ValidateCandidate(column, row, original, parameter, parsed, typeSwapped, status);
+                if (status == ChangeStatus.Conflict)
+                {
+                    conflictKind = ConflictKind.TypeSwapped;
+                }
+            }
+            else if (threeWay == ThreeWay.Conflict)
+            {
+                // The reviewer may choose "Use Excel", so check now that the Excel value could be written.
+                var (checkedStatus, reason, checkedTarget) =
+                    ValidateCandidate(column, row, original, parameter, parsed, typeSwapped, ChangeStatus.Conflict);
+                conflictKind = ConflictKind.ThreeWay;
+                targetValue = checkedStatus == ChangeStatus.Conflict && checkedTarget != null && !(column.IsType && typeSwapped)
+                    ? checkedTarget
+                    : null;
+                if (targetValue == null)
+                {
+                    message += $" The Excel value cannot be written ({reason.TrimEnd('.')}), so only \"Keep Revit\" is possible.";
+                }
             }
 
-            return NewItem(sheet, row, column, element, type, label, status, original.Display, current.Display,
+            var item = NewItem(sheet, row, column, element, type, label, status, original.Display, current.Display,
                 parsed.Display, message, c, targetValue);
+            item.ConflictKind = conflictKind;
+            return item;
         }
 
         /// <summary>Checks that an Excel change can actually be written; downgrades it otherwise.</summary>
@@ -320,6 +343,7 @@ namespace RevitScheduleSync.Revit.Import
                     foreach (var item in list)
                     {
                         item.Status = ChangeStatus.Conflict;
+                        item.ConflictKind = ConflictKind.Disagreement;
                         item.Message = (item.IsType ? "Rows set different values for the same type parameter: " : "Different values for the same element: ") + where;
                     }
                 }
@@ -332,6 +356,26 @@ namespace RevitScheduleSync.Revit.Import
                         item.Message = $"Same change as {first.SheetName} row {first.ExcelRow}; applied once.";
                     }
                 }
+            }
+        }
+
+        /// <summary>
+        /// Safe defaults: simple instance changes are proposed for Apply; type changes and three-way conflicts
+        /// need an explicit decision; conflicts that cannot be resolved here are skipped.
+        /// </summary>
+        private static void SetDefaultDecisions(List<ChangeItem> items)
+        {
+            foreach (var item in items)
+            {
+                item.Decision = item.Status switch
+                {
+                    ChangeStatus.Change => ReviewDecision.Apply,
+                    ChangeStatus.TypeChange => ReviewDecision.Pending,
+                    ChangeStatus.Conflict when item.ConflictKind == ConflictKind.ThreeWay =>
+                        item.Target != null ? ReviewDecision.Pending : ReviewDecision.KeepRevit,
+                    ChangeStatus.Conflict => ReviewDecision.Skip,
+                    _ => ReviewDecision.None
+                };
             }
         }
 
@@ -364,7 +408,8 @@ namespace RevitScheduleSync.Revit.Import
         /// <summary>Workshared models: elements owned by others or out of date with central cannot be written.</summary>
         private void CheckWorksharing(List<ChangeItem> items)
         {
-            foreach (var item in items.Where(i => i.IsApplicable))
+            // Includes conflicts the reviewer could resolve with "Use Excel".
+            foreach (var item in items.Where(i => i.IsApplicable || (i.Status == ChangeStatus.Conflict && i.Target != null)))
             {
                 var target = item.IsType && item.TypeUniqueId != null
                     ? _document.GetElement(item.TypeUniqueId)
@@ -422,7 +467,7 @@ namespace RevitScheduleSync.Revit.Import
             Current = current,
             Excel = excel,
             ExcelNormalised = excelNormalised,
-            Target = status is ChangeStatus.Change or ChangeStatus.TypeChange ? target : null,
+            Target = status is ChangeStatus.Change or ChangeStatus.TypeChange or ChangeStatus.Conflict ? target : null,
             Message = message
         };
 

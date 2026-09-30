@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Windows.Input;
 using RevitScheduleSync.Logging;
 using RevitScheduleSync.Models;
+using RevitScheduleSync.Services;
 
 namespace RevitScheduleSync.UI.ViewModels
 {
@@ -12,23 +14,25 @@ namespace RevitScheduleSync.UI.ViewModels
     /// </summary>
     public sealed class ExportViewModel : SectionViewModel
     {
-        private readonly Func<IReadOnlyList<ScheduleSummary>, IReadOnlyList<ScheduleAnalysis>> _analyse;
+        private readonly IScheduleOperations _operations;
+        private readonly Func<string?> _chooseSavePath;
         private readonly Action<string, Exception> _reportError;
         private readonly ILogger _logger;
         private ViewModelBase _currentStep;
+        private ScheduleAnalysisViewModel? _analysis;
 
-        /// <param name="analyse">
-        /// Runs the Revit-side analysis. Supplied by the command so this view model stays free of
-        /// Revit API types; it is called on the UI thread inside the modal command, i.e. in API context.
-        /// </param>
+        /// <param name="operations">Revit-side work; called on the UI thread inside the modal command (API context).</param>
+        /// <param name="chooseSavePath">Asks the user for the target .xlsx path; null when cancelled.</param>
         public ExportViewModel(
             ScheduleScanResult scan,
-            Func<IReadOnlyList<ScheduleSummary>, IReadOnlyList<ScheduleAnalysis>> analyse,
+            IScheduleOperations operations,
+            Func<string?> chooseSavePath,
             ILogger logger,
             Action<string, Exception> reportError)
             : base("Export")
         {
-            _analyse = analyse;
+            _operations = operations;
+            _chooseSavePath = chooseSavePath;
             _logger = logger;
             _reportError = reportError;
             Selection = new ScheduleSelectionViewModel(scan, logger, reportError, RunAnalysis);
@@ -48,21 +52,49 @@ namespace RevitScheduleSync.UI.ViewModels
             var selected = Selection.SelectedSchedules;
             _logger.Info($"Analyse requested for {selected.Count} schedule(s).");
 
-            IReadOnlyList<ScheduleAnalysis> results;
-            var previousCursor = Mouse.OverrideCursor;
+            var results = WithWaitCursor(() => _operations.Analyse(selected));
+            _analysis = new ScheduleAnalysisViewModel(results, () => CurrentStep = Selection, RunExport, _reportError);
+            CurrentStep = _analysis;
+        }
+
+        private void RunExport(ScheduleAnalysisViewModel analysis)
+        {
+            var path = _chooseSavePath();
+            if (string.IsNullOrEmpty(path))
+            {
+                _logger.Debug("Export cancelled at file selection.");
+                return;
+            }
+
+            var options = new ExportOptions
+            {
+                FilePath = path,
+                ProtectReadOnlyCells = analysis.ProtectReadOnlyCells,
+                ShowMetadataSheet = analysis.ShowMetadataSheet
+            };
+
+            var analyses = analysis.Schedules.Select(s => s.Analysis).Where(a => a.Error == null).ToList();
+            var result = WithWaitCursor(() => _operations.Export(analyses, options));
+
+            CurrentStep = new ExportResultViewModel(
+                result,
+                back: () => CurrentStep = _analysis!,
+                startOver: () => CurrentStep = Selection,
+                _reportError);
+        }
+
+        private static T WithWaitCursor<T>(Func<T> work)
+        {
+            var previous = Mouse.OverrideCursor;
             Mouse.OverrideCursor = Cursors.Wait;
             try
             {
-                results = _analyse(selected);
+                return work();
             }
             finally
             {
-                Mouse.OverrideCursor = previousCursor;
+                Mouse.OverrideCursor = previous;
             }
-
-            CurrentStep = new ScheduleAnalysisViewModel(results, BackToSelection, _reportError);
         }
-
-        private void BackToSelection() => CurrentStep = Selection;
     }
 }

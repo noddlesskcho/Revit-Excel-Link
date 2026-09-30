@@ -297,7 +297,7 @@ namespace RevitScheduleSync.Revit.Schedules
 
             if (summary.IncludesLinkedFiles)
             {
-                notes.Add("Includes linked files: rows from linked models will be read-only.");
+                notes.Add("Includes linked files: rows from linked models are not exported.");
             }
 
             if (sample.Instances.Count == 0)

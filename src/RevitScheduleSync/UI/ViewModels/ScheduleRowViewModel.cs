@@ -78,7 +78,7 @@ namespace RevitScheduleSync.UI.ViewModels
                 var text = Summary.SupportNote;
                 if (Summary.IncludesLinkedFiles)
                 {
-                    text += "\nIncludes elements from linked files: those rows will be read-only.";
+                    text += "\nIncludes elements from linked files: those rows are not exported.";
                 }
 
                 if (Summary.IsFilteredBySheet)

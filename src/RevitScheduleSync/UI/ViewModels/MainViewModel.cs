@@ -17,13 +17,14 @@ namespace RevitScheduleSync.UI.ViewModels
         public MainViewModel(
             SessionInfo session,
             ScheduleScanResult scheduleScan,
-            Func<IReadOnlyList<ScheduleSummary>, IReadOnlyList<ScheduleAnalysis>> analyseSchedules,
+            IScheduleOperations operations,
+            Func<string?> chooseSavePath,
             ILogger logger)
         {
             Session = session;
             _logger = logger;
 
-            Export = new ExportViewModel(scheduleScan, analyseSchedules, logger, ReportError);
+            Export = new ExportViewModel(scheduleScan, operations, chooseSavePath, logger, ReportError);
             Sections =
             [
                 Export,

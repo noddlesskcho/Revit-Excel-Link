@@ -158,12 +158,18 @@
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
             <Button Content="‹ Back" Style="{StaticResource Button.Secondary}" Command="{Binding BackCommand}" />
-            <TextBlock Grid.Column="1" Margin="12,0" VerticalAlignment="Center" Style="{StaticResource Text.Muted}"
-                       Text="Hover a field row for its parameter identity. Nothing has been written to the model." />
-            <Button Grid.Column="2" Content="Export ›" Style="{StaticResource Button.Primary}"
+            <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="12,0">
+                <CheckBox Content="Lock read-only cells" IsChecked="{Binding ProtectReadOnlyCells}" FontSize="12"
+                          VerticalAlignment="Center" Margin="0,0,16,0"
+                          ToolTip="Sheet protection without password: only editable cells can change. Filtering works; sorting does not." />
+                <CheckBox Content="Show metadata sheet (debug)" IsChecked="{Binding ShowMetadataSheet}" FontSize="12"
+                          VerticalAlignment="Center" Foreground="{StaticResource Brush.TextMuted}"
+                          ToolTip="Leaves the _RevitSyncMetadata sheet visible. Do not edit it." />
+            </StackPanel>
+            <Button Grid.Column="2" Content="Export to Excel ›" Style="{StaticResource Button.Primary}"
                     Command="{Binding ExportCommand}"
                     ToolTipService.ShowOnDisabled="True"
-                    ToolTip="Excel export arrives in Phase 3." />
+                    ToolTip="Choose a file and write the workbook. The model is not changed." />
         </Grid>
     </Grid>
 </UserControl>

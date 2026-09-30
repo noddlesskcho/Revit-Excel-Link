@@ -3,8 +3,11 @@ using Autodesk.Revit.Attributes;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
 using RevitScheduleSync.App;
+using RevitScheduleSync.Excel;
 using RevitScheduleSync.Models;
+using RevitScheduleSync.Revit;
 using RevitScheduleSync.Revit.Schedules;
+using RevitScheduleSync.UI;
 using RevitScheduleSync.UI.ViewModels;
 using RevitScheduleSync.UI.Views;
 
@@ -39,8 +42,10 @@ namespace RevitScheduleSync.Commands
                 // cannot change while the user browses this snapshot.
                 var scheduleScan = new ScheduleCatalog(document, logger).Scan();
 
-                var analyser = new ScheduleAnalyser(document, logger);
-                var viewModel = new MainViewModel(session, scheduleScan, analyser.AnalyseAll, logger);
+                var operations = new RevitScheduleOperations(
+                    uiApplication.Application, document, new ClosedXmlWorkbookWriter(logger), logger);
+                var viewModel = new MainViewModel(
+                    session, scheduleScan, operations, () => SaveDialogs.ChooseExportPath(document), logger);
                 var window = new ScheduleSyncWindow(viewModel);
 
                 // Parent the window to Revit so it stays on top of Revit and centres on it.

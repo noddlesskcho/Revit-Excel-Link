@@ -30,6 +30,10 @@
                 <views:ScheduleAnalysisView />
             </DataTemplate>
 
+            <DataTemplate DataType="{x:Type vm:ExportResultViewModel}">
+                <views:ExportResultView />
+            </DataTemplate>
+
             <DataTemplate DataType="{x:Type vm:WorkflowSectionViewModel}">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                 <StackPanel>

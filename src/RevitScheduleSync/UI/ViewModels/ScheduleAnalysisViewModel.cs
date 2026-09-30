@@ -13,16 +13,23 @@ namespace RevitScheduleSync.UI.ViewModels
     {
         private AnalysedScheduleViewModel? _selectedSchedule;
 
+        private bool _protectReadOnlyCells = true;
+        private bool _showMetadataSheet;
+
         public ScheduleAnalysisViewModel(
-            IReadOnlyList<ScheduleAnalysis> analyses, Action back, Action<string, Exception> reportError)
+            IReadOnlyList<ScheduleAnalysis> analyses,
+            Action back,
+            Action<ScheduleAnalysisViewModel> export,
+            Action<string, Exception> reportError)
         {
             Schedules = analyses.Select(a => new AnalysedScheduleViewModel(a)).ToList();
             _selectedSchedule = Schedules.FirstOrDefault();
 
             BackCommand = new RelayCommand(back, ex => reportError("Could not return to schedule selection.", ex));
-
-            // Excel export arrives in Phase 3.
-            ExportCommand = new RelayCommand(() => { }, ex => reportError("Could not export.", ex), () => false);
+            ExportCommand = new RelayCommand(
+                () => export(this),
+                ex => reportError("The export could not be completed.", ex),
+                () => Schedules.Any(s => !s.HasError));
 
             int editable = analyses.Sum(a => a.EditableInstanceCount + a.EditableTypeCount);
             int failed = analyses.Count(a => a.Error != null);
@@ -39,6 +46,20 @@ namespace RevitScheduleSync.UI.ViewModels
         }
 
         public string SummaryText { get; }
+
+        /// <summary>Lock read-only cells (sheet protection without password). Blocks sorting in Excel.</summary>
+        public bool ProtectReadOnlyCells
+        {
+            get => _protectReadOnlyCells;
+            set => SetProperty(ref _protectReadOnlyCells, value);
+        }
+
+        /// <summary>Debug option: leave the metadata sheet visible.</summary>
+        public bool ShowMetadataSheet
+        {
+            get => _showMetadataSheet;
+            set => SetProperty(ref _showMetadataSheet, value);
+        }
 
         public ICommand BackCommand { get; }
 

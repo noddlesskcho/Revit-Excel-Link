@@ -23,8 +23,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- DeployToRevit=false: building the tests must not copy the add-in into Revit's folder. -->
-    <ProjectReference Include="..\..\src\RevitScheduleSync\RevitScheduleSync.csproj" AdditionalProperties="DeployToRevit=false" />
+    <!-- No extra global properties: a different property set would build the add-in a second time, in parallel,
+         into the same output folder. Test runs therefore deploy like a normal Debug build (warning only if Revit is open). -->
+    <ProjectReference Include="..\..\src\RevitScheduleSync\RevitScheduleSync.csproj" />
   </ItemGroup>
 
 </Project>

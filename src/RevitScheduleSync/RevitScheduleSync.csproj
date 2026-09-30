@@ -81,12 +81,20 @@
     <Copy SourceFiles="@(_DeployFiles)"
           DestinationFolder="$(RevitAddinsDir)RevitScheduleSync\%(RecursiveDir)"
           SkipUnchangedFiles="true"
+          Retries="0"
           ContinueOnError="WarnAndContinue" />
+    <PropertyGroup>
+      <_DeployFilesOk>$(MSBuildLastTaskResult)</_DeployFilesOk>
+    </PropertyGroup>
     <Copy SourceFiles="$(OutDir)RevitScheduleSync.addin"
           DestinationFolder="$(RevitAddinsDir)"
           SkipUnchangedFiles="true"
+          Retries="0"
           ContinueOnError="WarnAndContinue" />
-    <Message Importance="high" Text="Deployed Revit Schedule Sync to $(RevitAddinsDir)" />
+    <Message Condition="'$(_DeployFilesOk)' == 'true' and '$(MSBuildLastTaskResult)' == 'true'"
+             Importance="high" Text="Deployed Revit Schedule Sync to $(RevitAddinsDir)" />
+    <Warning Condition="'$(_DeployFilesOk)' != 'true' or '$(MSBuildLastTaskResult)' != 'true'"
+             Text="Revit Schedule Sync was NOT deployed: the add-in files are in use (is Revit running?). Close Revit and build again." />
   </Target>
 
 </Project>

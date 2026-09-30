@@ -15,7 +15,7 @@ namespace RevitScheduleSync.UI.ViewModels
     /// <summary>
     /// Import step 2: review the three-way comparison and decide per item what happens.
     /// Only simple changes are pre-approved; type changes and conflicts need an explicit decision.
-    /// Nothing is written here: the Apply step (Phase 7) writes only items with WillWrite.
+    /// Nothing is written here: Apply (after a confirmation) writes only items with WillWrite.
     /// </summary>
     public sealed class ChangeReviewViewModel : ViewModelBase
     {
@@ -25,7 +25,8 @@ namespace RevitScheduleSync.UI.ViewModels
         private ChangeRowViewModel? _selectedRow;
 
         public ChangeReviewViewModel(
-            ChangeSet changes, IUserPrompts prompts, Action back, Action reanalyse, Action<string, Exception> reportError)
+            ChangeSet changes, IUserPrompts prompts, Action back, Action reanalyse, Action<ChangeReviewViewModel> apply,
+            Action<string, Exception> reportError)
         {
             Changes = changes;
             _prompts = prompts;
@@ -52,8 +53,8 @@ namespace RevitScheduleSync.UI.ViewModels
                 ex => reportError("Could not update decisions.", ex),
                 () => _rows.Any(r => r.Item.ConflictKind == ConflictKind.ThreeWay && r.Item.Decision != ReviewDecision.KeepRevit));
 
-            // Writing to the model arrives in Phase 7.
-            ApplyCommand = new RelayCommand(() => { }, ex => reportError("Could not apply.", ex), () => false);
+            ApplyCommand = new RelayCommand(() => apply(this), ex => reportError("The changes could not be applied.", ex),
+                () => !IsBlocked && WillWriteCount > 0);
         }
 
         public ChangeSet Changes { get; }

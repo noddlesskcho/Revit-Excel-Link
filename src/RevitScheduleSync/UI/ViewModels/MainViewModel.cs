@@ -19,19 +19,21 @@ namespace RevitScheduleSync.UI.ViewModels
             ScheduleScanResult scheduleScan,
             IScheduleOperations operations,
             Func<string?> chooseSavePath,
-            Func<string?> chooseImportPath,
+            ImportDialogs importDialogs,
             IUserPrompts prompts,
+            ReportStore reports,
             ILogger logger)
         {
             Session = session;
             _logger = logger;
 
             Export = new ExportViewModel(scheduleScan, operations, chooseSavePath, logger, ReportError);
+            var history = new HistoryViewModel(reports, ReportError);
             Sections =
             [
                 Export,
-                new ImportViewModel(operations, chooseImportPath, prompts, logger, ReportError),
-                WorkflowSectionViewModel.CreateHistory()
+                new ImportViewModel(operations, importDialogs, prompts, reports, history.Refresh, logger, ReportError),
+                history
             ];
             _selectedSection = Export;
 

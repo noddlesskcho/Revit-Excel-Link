@@ -16,8 +16,8 @@ namespace RevitScheduleSync.Commands
 {
     /// <summary>
     /// Opens the Schedule Sync window.
-    /// Manual transaction mode: the command itself never opens a transaction; later phases
-    /// open one explicitly, only in the Apply step, after the user has reviewed changes.
+    /// Manual transaction mode: the command itself never opens a transaction. The only transaction
+    /// is opened by ChangeApplier in the import Apply step, after review and confirmation.
     /// </summary>
     [Transaction(TransactionMode.Manual)]
     [Regeneration(RegenerationOption.Manual)]
@@ -46,7 +46,14 @@ namespace RevitScheduleSync.Commands
                 var operations = new RevitScheduleOperations(
                     uiApplication.Application, document, new ClosedXmlWorkbookWriter(logger), new ClosedXmlWorkbookReader(logger), logger);
                 var viewModel = new MainViewModel(
-                    session, scheduleScan, operations, () => SaveDialogs.ChooseExportPath(document), SaveDialogs.ChooseImportPath, new TaskDialogPrompts(), logger);
+                    session,
+                    scheduleScan,
+                    operations,
+                    () => SaveDialogs.ChooseExportPath(document),
+                    new ImportDialogs(SaveDialogs.ChooseImportPath, SaveDialogs.ChooseReportPath),
+                    new TaskDialogPrompts(),
+                    new ReportStore(logger),
+                    logger);
                 var window = new ScheduleSyncWindow(viewModel);
 
                 // Parent the window to Revit so it stays on top of Revit and centres on it.

@@ -204,6 +204,37 @@
         </Style.Triggers>
     </Style>
 
+    <!-- Import report result badges. -->
+    <Style x:Key="ResultBadge" TargetType="Border">
+        <Setter Property="CornerRadius" Value="3" />
+        <Setter Property="Padding" Value="6,1" />
+        <Setter Property="HorizontalAlignment" Value="Left" />
+        <Setter Property="Background" Value="#EEF0F2" />
+        <Setter Property="TextElement.Foreground" Value="#5F6B7A" />
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding Result}" Value="Applied">
+                <Setter Property="Background" Value="#E6F4EA" />
+                <Setter Property="TextElement.Foreground" Value="#1E6B34" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding Result}" Value="Failed">
+                <Setter Property="Background" Value="#FBEAEA" />
+                <Setter Property="TextElement.Foreground" Value="#8A2A2A" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding Result}" Value="Conflict">
+                <Setter Property="Background" Value="#FBEAEA" />
+                <Setter Property="TextElement.Foreground" Value="#8A2A2A" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding Result}" Value="ReadOnlyIgnored">
+                <Setter Property="Background" Value="#FFF3DC" />
+                <Setter Property="TextElement.Foreground" Value="#7A5200" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding Result}" Value="NotApplicable">
+                <Setter Property="Background" Value="#FFF3DC" />
+                <Setter Property="TextElement.Foreground" Value="#7A5200" />
+            </DataTrigger>
+        </Style.Triggers>
+    </Style>
+
     <Style x:Key="SummaryCard" TargetType="Border" BasedOn="{StaticResource Card}">
         <Setter Property="Padding" Value="14,10" />
         <Setter Property="Margin" Value="0,0,10,0" />

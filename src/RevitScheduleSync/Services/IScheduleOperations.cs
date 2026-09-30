@@ -17,6 +17,9 @@ namespace RevitScheduleSync.Services
 
         /// <summary>Reads a workbook and compares it with the model. Read-only: never writes to the model.</summary>
         ChangeSet AnalyseImport(string workbookPath);
+
+        /// <summary>Writes the approved items (ChangeItem.WillWrite) in one transaction and reports every item.</summary>
+        ImportReport Apply(ChangeSet changes);
     }
 
     public sealed class ExportOptions

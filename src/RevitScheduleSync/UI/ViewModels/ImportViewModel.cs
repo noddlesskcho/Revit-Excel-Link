@@ -1,4 +1,7 @@
 using System;
+using System.IO;
+using System.Linq;
+using System.Text;
 using System.Windows.Input;
 using RevitScheduleSync.Logging;
 using RevitScheduleSync.Models.Import;
@@ -7,26 +10,30 @@ using RevitScheduleSync.Services;
 namespace RevitScheduleSync.UI.ViewModels
 {
     /// <summary>
-    /// Import section: Select Workbook › Analyse › Compare › Validate › Review › (Apply, Report in Phase 7).
-    /// Analysis and review never write to the model.
+    /// Import section: Select Workbook › Analyse/Compare/Validate › Review › Apply › Report.
+    /// Only Apply writes to the model, after an explicit confirmation.
     /// </summary>
     public sealed class ImportViewModel : SectionViewModel
     {
         private readonly IScheduleOperations _operations;
-        private readonly Func<string?> _chooseImportPath;
+        private readonly ImportDialogs _dialogs;
         private readonly IUserPrompts _prompts;
+        private readonly ReportStore _reports;
+        private readonly Action _historyChanged;
         private readonly Action<string, Exception> _reportError;
         private readonly ILogger _logger;
         private ViewModelBase _currentStep;
 
         public ImportViewModel(
-            IScheduleOperations operations, Func<string?> chooseImportPath, IUserPrompts prompts, ILogger logger,
-            Action<string, Exception> reportError)
+            IScheduleOperations operations, ImportDialogs dialogs, IUserPrompts prompts, ReportStore reports,
+            Action historyChanged, ILogger logger, Action<string, Exception> reportError)
             : base("Import")
         {
             _operations = operations;
-            _chooseImportPath = chooseImportPath;
+            _dialogs = dialogs;
             _prompts = prompts;
+            _reports = reports;
+            _historyChanged = historyChanged;
             _logger = logger;
             _reportError = reportError;
             Start = new ImportStartViewModel(ChooseAndAnalyse, reportError);
@@ -43,7 +50,7 @@ namespace RevitScheduleSync.UI.ViewModels
 
         private void ChooseAndAnalyse()
         {
-            var path = _chooseImportPath();
+            var path = _dialogs.ChooseWorkbook();
             if (string.IsNullOrEmpty(path))
             {
                 _logger.Debug("Import cancelled at file selection.");
@@ -55,26 +62,100 @@ namespace RevitScheduleSync.UI.ViewModels
 
         private void Analyse(string path)
         {
-            var previous = Mouse.OverrideCursor;
-            Mouse.OverrideCursor = Cursors.Wait;
-            ChangeSet changes;
-            try
-            {
-                changes = _operations.AnalyseImport(path);
-            }
-            finally
-            {
-                Mouse.OverrideCursor = previous;
-            }
-
+            var changes = WithWaitCursor(() => _operations.AnalyseImport(path));
             CurrentStep = new ChangeReviewViewModel(
                 changes,
                 _prompts,
                 back: () => CurrentStep = Start,
                 reanalyse: () => Analyse(path),
+                apply: Apply,
                 _reportError);
         }
+
+        private void Apply(ChangeReviewViewModel review)
+        {
+            var changes = review.Changes;
+            var toWrite = changes.Items.Where(i => i.WillWrite).ToList();
+            if (toWrite.Count == 0)
+            {
+                return;
+            }
+
+            if (!_prompts.Confirm($"Apply {toWrite.Count} change(s) to the model?", BuildConfirmation(changes), "Apply changes", "Cancel"))
+            {
+                _logger.Info("Apply cancelled by user at confirmation.");
+                return;
+            }
+
+            var report = WithWaitCursor(() => _operations.Apply(changes));
+            var saved = _reports.Save(report);
+            _historyChanged();
+
+            CurrentStep = new ImportReportViewModel(
+                report,
+                saved,
+                exportReport: () => ExportReport(report),
+                openFolder: () => ShellOpen.Folder(_reports.Folder),
+                reanalyse: () => Analyse(changes.Workbook.FilePath),
+                done: () => CurrentStep = Start,
+                _reportError);
+        }
+
+        private void ExportReport(ImportReport report)
+        {
+            var path = _dialogs.ChooseReportPath(
+                $"Schedule Sync report {report.Time:yyyy-MM-dd HHmm} - {Path.GetFileNameWithoutExtension(report.DocumentTitle)}.csv");
+            if (string.IsNullOrEmpty(path))
+            {
+                return;
+            }
+
+            try
+            {
+                ReportStore.Write(report, path);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                throw new ScheduleSyncException($"The report could not be saved to \"{Path.GetFileName(path)}\". Is it open in Excel?", ex);
+            }
+        }
+
+        private static string BuildConfirmation(ChangeSet changes)
+        {
+            var write = changes.Items.Where(i => i.WillWrite).ToList();
+            var types = write.Where(i => i.IsType).ToList();
+            int pending = changes.Items.Count(i => i.Decision == ReviewDecision.Pending);
+
+            var text = new StringBuilder()
+                .AppendLine($"Instance values: {write.Count(i => !i.IsType)}")
+                .AppendLine($"Type values: {types.Count} (affecting {types.Sum(i => i.AffectedInstances ?? 0):N0} instances)")
+                .AppendLine($"Conflicts resolved with the Excel value: {write.Count(i => i.Status == ChangeStatus.Conflict)}");
+            if (pending > 0)
+            {
+                text.AppendLine().AppendLine($"{pending} item(s) still need a decision and will NOT be applied.");
+            }
+
+            text.AppendLine().Append("All changes are made in one step: Undo (Ctrl+Z) reverses the whole import.");
+            return text.ToString();
+        }
+
+        private static T WithWaitCursor<T>(Func<T> work)
+        {
+            var previous = Mouse.OverrideCursor;
+            Mouse.OverrideCursor = Cursors.Wait;
+            try
+            {
+                return work();
+            }
+            finally
+            {
+                Mouse.OverrideCursor = previous;
+            }
+        }
     }
+
+    /// <summary>File dialogs used by the import workflow (injected so view models stay testable).</summary>
+    public sealed record ImportDialogs(Func<string?> ChooseWorkbook, Func<string, string?> ChooseReportPath);
 
     /// <summary>Import step 1: choose the workbook.</summary>
     public sealed class ImportStartViewModel : ViewModelBase

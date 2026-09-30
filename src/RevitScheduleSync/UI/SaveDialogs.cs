@@ -44,6 +44,23 @@ namespace RevitScheduleSync.UI
             return dialog.ShowDialog() == true ? dialog.FileName : null;
         }
 
+        /// <summary>Asks where to save an import report copy. Returns null when the user cancels.</summary>
+        public static string? ChooseReportPath(string defaultName)
+        {
+            var dialog = new SaveFileDialog
+            {
+                Title = "Export import report",
+                Filter = "CSV report (*.csv)|*.csv",
+                DefaultExt = ".csv",
+                AddExtension = true,
+                OverwritePrompt = true,
+                FileName = defaultName,
+                InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)
+            };
+
+            return dialog.ShowDialog() == true ? dialog.FileName : null;
+        }
+
         private static string GetInitialDirectory(Document document)
         {
             try

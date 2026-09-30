@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using RevitScheduleSync.Models.Export;
 
 namespace RevitScheduleSync.Models.Import
 {
@@ -105,6 +106,14 @@ namespace RevitScheduleSync.Models.Import
 
         /// <summary>Value to write when the item is applied (Change / TypeChange only).</summary>
         public TargetValue? Target { get; init; }
+
+        /// <summary>Parameter identity and value format, so Apply can re-find and re-check the value.</summary>
+        public ParameterIdentity? Parameter { get; init; }
+        public CellKind Kind { get; init; }
+        public string ExportUnitTypeId { get; init; } = string.Empty;
+
+        /// <summary>Normalised B at analysis time; Apply refuses to write if Revit no longer matches it.</summary>
+        public string? CurrentNormalised { get; init; }
 
         /// <summary>Normalised C, used to detect disagreeing duplicates.</summary>
         public string? ExcelNormalised { get; init; }

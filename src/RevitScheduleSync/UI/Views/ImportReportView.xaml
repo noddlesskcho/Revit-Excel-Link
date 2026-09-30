@@ -1,0 +1,178 @@
+<UserControl x:Class="RevitScheduleSync.UI.Views.ImportReportView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- Theme merged locally: see ScheduleSelectionView.xaml for why. -->
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="../Styles/Theme.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+            <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- Title + steps -->
+        <Grid Grid.Row="0" Margin="0,0,0,10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <StackPanel>
+                <TextBlock Text="{Binding Title}" Style="{StaticResource Text.Title}" />
+                <TextBlock Text="{Binding Subtitle}" Style="{StaticResource Text.Muted}" Margin="0,2,0,0" TextTrimming="CharacterEllipsis" />
+            </StackPanel>
+            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top" Margin="16,2,0,0">
+                <Border Style="{StaticResource StepPill.Done}">
+                    <TextBlock Text="&#x2713;  Select" FontSize="12" />
+                </Border>
+                <TextBlock Text="&#x203A;" Margin="6,0" FontSize="16" VerticalAlignment="Center" Foreground="{StaticResource Brush.TextMuted}" />
+                <Border Style="{StaticResource StepPill.Done}">
+                    <TextBlock Text="&#x2713;  Review" FontSize="12" />
+                </Border>
+                <TextBlock Text="&#x203A;" Margin="6,0" FontSize="16" VerticalAlignment="Center" Foreground="{StaticResource Brush.TextMuted}" />
+                <Border Style="{StaticResource StepPill.Current}">
+                    <TextBlock Text="&#x2713;  Report" FontSize="12" />
+                </Border>
+            </StackPanel>
+        </Grid>
+
+        <Border Grid.Row="1" Style="{StaticResource ErrorBox}" Margin="0,0,0,10"
+                Visibility="{Binding RolledBack, Converter={StaticResource BoolToVisibility}}">
+            <TextBlock Style="{StaticResource Text.Body}"
+                       Text="Revit rejected the import and rolled it back. The model was not changed. See Failed items for the reason." />
+        </Border>
+
+        <!-- Summary -->
+        <WrapPanel Grid.Row="2" Margin="0,0,0,8">
+            <Border Style="{StaticResource SummaryCard}">
+                <StackPanel>
+                    <TextBlock Text="{Binding Applied}" Style="{StaticResource Text.CardNumber}" Foreground="#1E6B34" />
+                    <TextBlock Text="Applied" Style="{StaticResource Text.Muted}" />
+                </StackPanel>
+            </Border>
+            <Border Style="{StaticResource SummaryCard}">
+                <StackPanel>
+                    <TextBlock Text="{Binding Skipped}" Style="{StaticResource Text.CardNumber}" />
+                    <TextBlock Text="Skipped" Style="{StaticResource Text.Muted}" />
+                </StackPanel>
+            </Border>
+            <Border Style="{StaticResource SummaryCard}">
+                <StackPanel>
+                    <TextBlock Text="{Binding Conflicts}" Style="{StaticResource Text.CardNumber}" Foreground="#8A2A2A" />
+                    <TextBlock Text="Conflicts" Style="{StaticResource Text.Muted}" />
+                </StackPanel>
+            </Border>
+            <Border Style="{StaticResource SummaryCard}">
+                <StackPanel>
+                    <TextBlock Text="{Binding Failed}" Style="{StaticResource Text.CardNumber}" Foreground="#8A2A2A" />
+                    <TextBlock Text="Failed" Style="{StaticResource Text.Muted}" />
+                </StackPanel>
+            </Border>
+            <Border Style="{StaticResource SummaryCard}">
+                <StackPanel>
+                    <TextBlock Text="{Binding ReadOnlyIgnored}" Style="{StaticResource Text.CardNumber}" Foreground="#7A5200" />
+                    <TextBlock Text="Read-only ignored" Style="{StaticResource Text.Muted}" />
+                </StackPanel>
+            </Border>
+            <Border Style="{StaticResource SummaryCard}">
+                <StackPanel>
+                    <TextBlock Text="{Binding NotApplicable}" Style="{StaticResource Text.CardNumber}" Foreground="#7A5200" />
+                    <TextBlock Text="Not applicable" Style="{StaticResource Text.Muted}" />
+                </StackPanel>
+            </Border>
+        </WrapPanel>
+
+        <StackPanel Grid.Row="3">
+            <Border Style="{StaticResource NoteBox}" Margin="0,0,0,8"
+                    Visibility="{Binding HasRevitWarnings, Converter={StaticResource BoolToVisibility}}">
+                <StackPanel>
+                    <TextBlock Text="Revit warnings raised by the import (also listed in the report):" FontWeight="SemiBold" Style="{StaticResource Text.Body}" />
+                    <ItemsControl ItemsSource="{Binding RevitWarnings}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Style="{StaticResource Text.Body}" Margin="0,1">
+                                    <Run Text="•  " /><Run Text="{Binding Mode=OneWay}" />
+                                </TextBlock>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+            <Grid Margin="0,0,0,6">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <ComboBox ItemsSource="{Binding ResultFilters}" SelectedItem="{Binding ResultFilter}" Width="180" FontSize="12" />
+                <TextBlock Grid.Column="1" Text="{Binding SavedText}" Style="{StaticResource Text.Muted}" HorizontalAlignment="Right"
+                           VerticalAlignment="Center" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" />
+            </Grid>
+        </StackPanel>
+
+        <!-- Details -->
+        <DataGrid Grid.Row="4" ItemsSource="{Binding Entries}"
+                  Style="{StaticResource Grid.Flat}"
+                  ColumnHeaderStyle="{StaticResource Grid.Header}"
+                  CellStyle="{StaticResource Grid.Cell}">
+            <DataGrid.RowStyle>
+                <Style TargetType="DataGridRow">
+                    <Setter Property="ToolTip" Value="{Binding Entry.Message}" />
+                </Style>
+            </DataGrid.RowStyle>
+            <DataGrid.Columns>
+                <DataGridTemplateColumn Header="Result" SortMemberPath="Result" Width="Auto" MinWidth="120">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <Border Style="{StaticResource ResultBadge}">
+                                <TextBlock Text="{Binding ResultText}" FontSize="11" />
+                            </Border>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTextColumn Header="Schedule" Binding="{Binding Entry.Schedule}" Width="*" MinWidth="90" />
+                <DataGridTextColumn Header="Element" Binding="{Binding Entry.Element}" Width="*" MinWidth="100" />
+                <DataGridTextColumn Header="Element ID" Binding="{Binding Entry.ElementId}" Width="Auto" MinWidth="86" />
+                <DataGridTextColumn Header="Parameter" Binding="{Binding Entry.Parameter}" Width="*" MinWidth="90" />
+                <DataGridTextColumn Header="Previous value" Binding="{Binding Entry.PreviousValue}" Width="*" MinWidth="90" />
+                <DataGridTextColumn Header="New value" Binding="{Binding Entry.NewValue}" Width="*" MinWidth="80" />
+                <DataGridTextColumn Header="Message" Binding="{Binding Entry.Message}" Width="2*" MinWidth="140">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Foreground" Value="{StaticResource Brush.TextMuted}" />
+                            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                </DataGridTextColumn>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <Grid Grid.Row="5" Margin="0,10,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <Button Content="Export report…" Style="{StaticResource Button.Secondary}" Command="{Binding ExportReportCommand}" />
+            <Button Grid.Column="1" Content="Open report folder" Style="{StaticResource Button.Link}" Margin="8,0,0,0"
+                    Command="{Binding OpenFolderCommand}" />
+            <Button Grid.Column="2" Content="Re-analyse workbook" Style="{StaticResource Button.Link}" Margin="8,0,0,0"
+                    Command="{Binding ReanalyseCommand}" ToolTip="Compare the same workbook with the updated model." />
+            <TextBlock Grid.Column="3" Margin="12,0" VerticalAlignment="Center" Style="{StaticResource Text.Muted}"
+                       Text="Undo (Ctrl+Z) in Revit reverses the whole import." />
+            <Button Grid.Column="4" Content="Done" Style="{StaticResource Button.Primary}" Command="{Binding DoneCommand}" />
+        </Grid>
+    </Grid>
+</UserControl>

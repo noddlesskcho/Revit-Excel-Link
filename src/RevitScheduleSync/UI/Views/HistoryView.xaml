@@ -1,0 +1,64 @@
+<UserControl x:Class="RevitScheduleSync.UI.Views.HistoryView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- Theme merged locally: see ScheduleSelectionView.xaml for why. -->
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="../Styles/Theme.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+            <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Margin="0,0,0,12">
+            <TextBlock Text="Import history" Style="{StaticResource Text.Title}" />
+            <TextBlock Text="{Binding FolderText}" Style="{StaticResource Text.Muted}" Margin="0,2,0,0" TextTrimming="CharacterEllipsis" />
+        </StackPanel>
+
+        <DataGrid Grid.Row="1" ItemsSource="{Binding Reports}"
+                  Style="{StaticResource Grid.Flat}"
+                  ColumnHeaderStyle="{StaticResource Grid.Header}"
+                  CellStyle="{StaticResource Grid.Cell}">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Time" Binding="{Binding Time, StringFormat=g}" Width="Auto" MinWidth="130" />
+                <DataGridTextColumn Header="Project" Binding="{Binding Project}" Width="*" MinWidth="120" />
+                <DataGridTextColumn Header="Workbook" Binding="{Binding Workbook}" Width="*" MinWidth="140" />
+                <DataGridTextColumn Header="Summary" Binding="{Binding Summary}" Width="2*" MinWidth="200">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+                            <Setter Property="ToolTip" Value="{Binding Summary}" />
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                </DataGridTextColumn>
+                <DataGridTemplateColumn Width="70">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <Button Content="Open" Style="{StaticResource Button.Link}"
+                                    Command="{Binding DataContext.OpenCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                    CommandParameter="{Binding Path}" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <TextBlock Grid.Row="1" Text="No imports yet. Reports appear here after changes are applied."
+                   Style="{StaticResource Text.Muted}" HorizontalAlignment="Center" VerticalAlignment="Center"
+                   Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVisibility}}" />
+
+        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,10,0,0">
+            <Button Content="Refresh" Style="{StaticResource Button.Secondary}" Command="{Binding RefreshCommand}" />
+            <Button Content="Open report folder" Style="{StaticResource Button.Link}" Margin="8,0,0,0" Command="{Binding OpenFolderCommand}" />
+        </StackPanel>
+    </Grid>
+</UserControl>

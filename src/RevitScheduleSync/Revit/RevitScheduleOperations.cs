@@ -13,11 +13,12 @@ using RevitScheduleSync.Models.Import;
 using RevitScheduleSync.Revit.Documents;
 using RevitScheduleSync.Revit.Import;
 using RevitScheduleSync.Revit.Schedules;
+using RevitScheduleSync.Revit.Transactions;
 using RevitScheduleSync.Services;
 
 namespace RevitScheduleSync.Revit
 {
-    /// <summary>IScheduleOperations for the active Revit document. Read-only: no transactions.</summary>
+    /// <summary>IScheduleOperations for the active Revit document. Only Apply opens a transaction.</summary>
     internal sealed class RevitScheduleOperations : IScheduleOperations
     {
         private readonly Application _application;
@@ -48,6 +49,8 @@ namespace RevitScheduleSync.Revit
             // 2. Compare with the model (read-only Revit API, no transaction).
             return new ImportAnalyser(_document, _logger).Analyse(workbook);
         }
+
+        public ImportReport Apply(ChangeSet changes) => new ChangeApplier(_document, _logger).Apply(changes);
 
         public IReadOnlyList<ScheduleAnalysis> Analyse(IReadOnlyList<ScheduleSummary> schedules) =>
             _analyser.AnalyseAll(schedules);

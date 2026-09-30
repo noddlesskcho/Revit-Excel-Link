@@ -266,7 +266,7 @@
                        Text="{Binding InfoText}" />
             <Button Grid.Column="3" Content="{Binding ApplyText}" Style="{StaticResource Button.Primary}"
                     Command="{Binding ApplyCommand}" ToolTipService.ShowOnDisabled="True"
-                    ToolTip="Writing to the model arrives in Phase 7. Nothing has been written yet." />
+                    ToolTip="Writes the approved values in one step (one Undo). You confirm first." />
         </Grid>
     </Grid>
 </UserControl>

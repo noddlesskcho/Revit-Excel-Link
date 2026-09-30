@@ -231,7 +231,7 @@ namespace RevitScheduleSync.Revit.Import
             }
 
             var item = NewItem(sheet, row, column, element, type, label, status, original.Display, current.Display,
-                parsed.Display, message, c, targetValue);
+                parsed.Display, message, c, targetValue, b);
             item.ConflictKind = conflictKind;
             return item;
         }
@@ -448,7 +448,7 @@ namespace RevitScheduleSync.Revit.Import
         private static ChangeItem NewItem(
             ImportSheet sheet, ImportRow row, ImportColumn column, Element element, Element? type, string label,
             ChangeStatus status, string original, string current, string excel, string message,
-            string? excelNormalised = null, TargetValue? target = null) => new()
+            string? excelNormalised = null, TargetValue? target = null, string? currentNormalised = null) => new()
         {
             Status = status,
             SheetName = sheet.SheetName,
@@ -459,6 +459,10 @@ namespace RevitScheduleSync.Revit.Import
             FieldId = column.FieldId,
             ParameterName = column.Heading,
             ParameterKey = column.Parameter.Key,
+            Parameter = column.Parameter,
+            Kind = column.Kind,
+            ExportUnitTypeId = column.ExportUnitTypeId,
+            CurrentNormalised = currentNormalised,
             IsType = column.IsType,
             TypeUniqueId = type?.UniqueId,
             TypeName = type?.Name,

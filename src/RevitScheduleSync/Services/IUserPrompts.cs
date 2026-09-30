@@ -21,11 +21,14 @@ namespace RevitScheduleSync.Services
                 MainIcon = TaskDialogIcon.TaskDialogIconWarning,
                 MainInstruction = instruction,
                 MainContent = content,
-                AllowCancellation = true,
-                DefaultButton = TaskDialogResult.CommandLink2
+                AllowCancellation = true
             };
             dialog.AddCommandLink(TaskDialogCommandLinkId.CommandLink1, confirmText);
             dialog.AddCommandLink(TaskDialogCommandLinkId.CommandLink2, cancelText);
+
+            // Must be set after the command links exist: Revit throws "Corresponding button not found" otherwise.
+            // Default = cancel, so pressing Enter never writes to the model.
+            dialog.DefaultButton = TaskDialogResult.CommandLink2;
 
             return dialog.Show() == TaskDialogResult.CommandLink1;
         }

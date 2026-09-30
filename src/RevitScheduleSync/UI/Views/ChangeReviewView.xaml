@@ -146,6 +146,20 @@
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
             </Border>
+            <!-- One tab per schedule (sheet); scopes the grid, cards and bulk actions. -->
+            <Border BorderBrush="{StaticResource Brush.Border}" BorderThickness="0,0,0,1" Margin="0,0,0,8">
+                <ListBox ItemsSource="{Binding ScheduleTabs}" SelectedItem="{Binding SelectedTab}"
+                         ItemContainerStyle="{StaticResource NavItem}" DisplayMemberPath="Label"
+                         Background="Transparent" BorderThickness="0" Margin="-14,0,0,0"
+                         ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                         ScrollViewer.HorizontalScrollBarVisibility="Auto">
+                    <ListBox.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <StackPanel Orientation="Horizontal" />
+                        </ItemsPanelTemplate>
+                    </ListBox.ItemsPanel>
+                </ListBox>
+            </Border>
             <Grid Margin="0,0,0,6">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />

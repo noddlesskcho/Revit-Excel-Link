@@ -22,6 +22,7 @@ namespace RevitScheduleSync.UI.ViewModels
         private readonly List<ChangeRowViewModel> _rows;
         private readonly IUserPrompts _prompts;
         private ReviewFilter _selectedFilter;
+        private ScheduleTab _selectedTab;
         private ChangeRowViewModel? _selectedRow;
 
         public ChangeReviewViewModel(
@@ -35,8 +36,11 @@ namespace RevitScheduleSync.UI.ViewModels
             Filters = ReviewFilter.All;
             _selectedFilter = Filters[0];
 
+            ScheduleTabs = ScheduleTab.Create(changes);
+            _selectedTab = ScheduleTabs[0];
+
             Items = CollectionViewSource.GetDefaultView(_rows);
-            Items.Filter = o => o is ChangeRowViewModel row && _selectedFilter.Matches(row.Item);
+            Items.Filter = o => o is ChangeRowViewModel row && _selectedTab.Contains(row.Item) && _selectedFilter.Matches(row.Item);
 
             BackCommand = new RelayCommand(back, ex => reportError("Could not go back.", ex));
             ReanalyseCommand = new RelayCommand(reanalyse, ex => reportError("The workbook could not be analysed.", ex));
@@ -48,13 +52,13 @@ namespace RevitScheduleSync.UI.ViewModels
                 ex => reportError("Could not update decisions.", ex), () => ChangeCount + TypeChangeCount > 0);
             ApproveTypeChangesCommand = new RelayCommand(ApproveAllTypeChanges,
                 ex => reportError("Could not update decisions.", ex),
-                () => _rows.Any(r => r.Item.Status == ChangeStatus.TypeChange && r.Item.Decision != ReviewDecision.Apply));
+                () => Scoped.Any(r => r.Item.Status == ChangeStatus.TypeChange && r.Item.Decision != ReviewDecision.Apply));
             KeepRevitForConflictsCommand = new RelayCommand(KeepRevitForConflicts,
                 ex => reportError("Could not update decisions.", ex),
-                () => _rows.Any(r => r.Item.ConflictKind == ConflictKind.ThreeWay && r.Item.Decision != ReviewDecision.KeepRevit));
+                () => Scoped.Any(r => r.Item.ConflictKind == ConflictKind.ThreeWay && r.Item.Decision != ReviewDecision.KeepRevit));
 
             ApplyCommand = new RelayCommand(() => apply(this), ex => reportError("The changes could not be applied.", ex),
-                () => !IsBlocked && WillWriteCount > 0);
+                () => !IsBlocked && TotalWillWriteCount > 0);
         }
 
         public ChangeSet Changes { get; }
@@ -72,6 +76,25 @@ namespace RevitScheduleSync.UI.ViewModels
                 {
                     Items.Refresh();
                     OnPropertyChanged(nameof(VisibleText));
+                }
+            }
+        }
+
+        /// <summary>"All schedules" plus one tab per schedule sheet in the workbook.</summary>
+        public IReadOnlyList<ScheduleTab> ScheduleTabs { get; }
+
+        /// <summary>Scopes the grid, summary cards and bulk actions. Apply always covers every schedule.</summary>
+        public ScheduleTab SelectedTab
+        {
+            get => _selectedTab;
+            set
+            {
+                if (value != null && SetProperty(ref _selectedTab, value))
+                {
+                    Items.Refresh();
+                    SelectedRow = null;
+                    RaiseCountsChanged();
+                    CommandManager.InvalidateRequerySuggested();
                 }
             }
         }
@@ -94,23 +117,28 @@ namespace RevitScheduleSync.UI.ViewModels
 
         public string FingerprintText => string.Join(Environment.NewLine, Changes.Fingerprint.Reasons);
 
-        public int ChangeCount => Changes.Count(ChangeStatus.Change);
-        public int TypeChangeCount => Changes.Count(ChangeStatus.TypeChange);
-        public int ConflictCount => Changes.Count(ChangeStatus.Conflict);
+        // Summary cards: scoped to the selected schedule tab.
+        public int ChangeCount => Scoped.Count(r => r.Item.Status == ChangeStatus.Change);
+        public int TypeChangeCount => Scoped.Count(r => r.Item.Status == ChangeStatus.TypeChange);
+        public int ConflictCount => Scoped.Count(r => r.Item.Status == ChangeStatus.Conflict);
+        public int WarningCount => Scoped.Count(r => ReviewFilter.IsWarning(r.Item.Status));
+        public int BlockedCount => Scoped.Count(r => r.Item.Status == ChangeStatus.Blocked);
 
-        public int WarningCount => _rows.Count(r => ReviewFilter.IsWarning(r.Item.Status));
+        /// <summary>Items the Apply step would write in the selected tab.</summary>
+        public int WillWriteCount => Scoped.Count(r => r.Item.WillWrite);
 
-        public int BlockedCount => Changes.Count(ChangeStatus.Blocked);
+        /// <summary>Items in the selected tab still waiting for a decision (not applied until decided).</summary>
+        public int PendingCount => Scoped.Count(r => r.Item.Decision == ReviewDecision.Pending);
 
-        /// <summary>Items the Apply step would write with the current decisions.</summary>
-        public int WillWriteCount => _rows.Count(r => r.Item.WillWrite);
+        /// <summary>Items Apply would write across all schedules (Apply is never scoped).</summary>
+        public int TotalWillWriteCount => _rows.Count(r => r.Item.WillWrite);
 
-        /// <summary>Items still waiting for a decision (not applied until decided).</summary>
-        public int PendingCount => _rows.Count(r => r.Item.Decision == ReviewDecision.Pending);
+        public string ApplyText => ScheduleTabs.Count > 2
+            ? $"Apply {TotalWillWriteCount} change(s) in all schedules ›"
+            : $"Apply {TotalWillWriteCount} change(s) ›";
 
-        public string ApplyText => $"Apply {WillWriteCount} change(s) ›";
-
-        public string VisibleText => $"{_rows.Count(r => _selectedFilter.Matches(r.Item)):N0} of {_rows.Count:N0} shown";
+        public string VisibleText =>
+            $"{Scoped.Count(r => _selectedFilter.Matches(r.Item)):N0} of {Scoped.Count():N0} shown";
 
         public string InfoText =>
             $"{Changes.Count(ChangeStatus.NoChange):N0} unchanged · {Changes.Count(ChangeStatus.RevitChanged)} changed in Revit only · " +
@@ -146,10 +174,23 @@ namespace RevitScheduleSync.UI.ViewModels
             return _prompts.Confirm("TYPE PARAMETER CHANGE", content, "Approve type change", "Cancel");
         }
 
+        /// <summary>Rows in the selected schedule tab.</summary>
+        private IEnumerable<ChangeRowViewModel> Scoped => _rows.Where(r => _selectedTab.Contains(r.Item));
+
+        private void RaiseCountsChanged()
+        {
+            foreach (var name in new[] { nameof(ChangeCount), nameof(TypeChangeCount), nameof(ConflictCount), nameof(WarningCount),
+                         nameof(BlockedCount), nameof(WillWriteCount), nameof(PendingCount), nameof(VisibleText) })
+            {
+                OnPropertyChanged(name);
+            }
+        }
+
         internal void DecisionsChanged()
         {
             OnPropertyChanged(nameof(WillWriteCount));
             OnPropertyChanged(nameof(PendingCount));
+            OnPropertyChanged(nameof(TotalWillWriteCount));
             OnPropertyChanged(nameof(ApplyText));
             CommandManager.InvalidateRequerySuggested();
 
@@ -166,7 +207,7 @@ namespace RevitScheduleSync.UI.ViewModels
 
         private void SetAll(ChangeStatus status, ReviewDecision decision)
         {
-            foreach (var row in _rows.Where(r => r.Item.Status == status))
+            foreach (var row in Scoped.Where(r => r.Item.Status == status))
             {
                 row.SetDecision(decision);
             }
@@ -176,7 +217,7 @@ namespace RevitScheduleSync.UI.ViewModels
 
         private void SkipAll()
         {
-            foreach (var row in _rows.Where(r => r.Item.Status is ChangeStatus.Change or ChangeStatus.TypeChange))
+            foreach (var row in Scoped.Where(r => r.Item.Status is ChangeStatus.Change or ChangeStatus.TypeChange))
             {
                 row.SetDecision(ReviewDecision.Skip);
             }
@@ -186,7 +227,7 @@ namespace RevitScheduleSync.UI.ViewModels
 
         private void ApproveAllTypeChanges()
         {
-            var pending = _rows.Where(r => r.Item.Status == ChangeStatus.TypeChange && r.Item.Decision != ReviewDecision.Apply).ToList();
+            var pending = Scoped.Where(r => r.Item.Status == ChangeStatus.TypeChange && r.Item.Decision != ReviewDecision.Apply).ToList();
             var lines = pending.Take(8).Select(r =>
                 $"• {r.Item.TypeName} — {r.Item.ParameterName}: {r.Item.Current} → {r.Item.Excel} ({r.Item.AffectedInstances?.ToString() ?? "?"} instances)");
             var content = string.Join(Environment.NewLine, lines)
@@ -207,12 +248,49 @@ namespace RevitScheduleSync.UI.ViewModels
 
         private void KeepRevitForConflicts()
         {
-            foreach (var row in _rows.Where(r => r.Item.ConflictKind == ConflictKind.ThreeWay))
+            foreach (var row in Scoped.Where(r => r.Item.ConflictKind == ConflictKind.ThreeWay))
             {
                 row.SetDecision(ReviewDecision.KeepRevit);
             }
 
             DecisionsChanged();
+        }
+    }
+
+    /// <summary>A schedule tab above the review grid. SheetName null = all schedules.</summary>
+    public sealed class ScheduleTab
+    {
+        private ScheduleTab(string? sheetName, string label)
+        {
+            SheetName = sheetName;
+            Label = label;
+        }
+
+        public string? SheetName { get; }
+
+        /// <summary>Name plus the number of changes and problems (unchanged values are not counted).</summary>
+        public string Label { get; }
+
+        public bool Contains(ChangeItem item) => SheetName == null || item.SheetName == SheetName;
+
+        public override string ToString() => Label;
+
+        /// <summary>"All schedules" first, then schedules in workbook order.</summary>
+        public static IReadOnlyList<ScheduleTab> Create(ChangeSet changes)
+        {
+            static int Relevant(IEnumerable<ChangeItem> items) => items.Count(i => i.Status != ChangeStatus.NoChange);
+
+            var tabs = new List<ScheduleTab> { new(null, $"All schedules ({Relevant(changes.Items)})") };
+            foreach (var sheet in changes.Workbook.Sheets)
+            {
+                var items = changes.Items.Where(i => i.SheetName == sheet.SheetName).ToList();
+                if (items.Count > 0)
+                {
+                    tabs.Add(new ScheduleTab(sheet.SheetName, $"{sheet.ScheduleName} ({Relevant(items)})"));
+                }
+            }
+
+            return tabs;
         }
     }
 

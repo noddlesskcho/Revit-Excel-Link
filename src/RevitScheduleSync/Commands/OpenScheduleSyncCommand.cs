@@ -43,9 +43,9 @@ namespace RevitScheduleSync.Commands
                 var scheduleScan = new ScheduleCatalog(document, logger).Scan();
 
                 var operations = new RevitScheduleOperations(
-                    uiApplication.Application, document, new ClosedXmlWorkbookWriter(logger), logger);
+                    uiApplication.Application, document, new ClosedXmlWorkbookWriter(logger), new ClosedXmlWorkbookReader(logger), logger);
                 var viewModel = new MainViewModel(
-                    session, scheduleScan, operations, () => SaveDialogs.ChooseExportPath(document), logger);
+                    session, scheduleScan, operations, () => SaveDialogs.ChooseExportPath(document), SaveDialogs.ChooseImportPath, logger);
                 var window = new ScheduleSyncWindow(viewModel);
 
                 // Parent the window to Revit so it stays on top of Revit and centres on it.

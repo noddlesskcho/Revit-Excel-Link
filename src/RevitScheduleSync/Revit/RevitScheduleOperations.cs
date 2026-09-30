@@ -9,7 +9,9 @@ using RevitScheduleSync.Excel;
 using RevitScheduleSync.Logging;
 using RevitScheduleSync.Models;
 using RevitScheduleSync.Models.Export;
+using RevitScheduleSync.Models.Import;
 using RevitScheduleSync.Revit.Documents;
+using RevitScheduleSync.Revit.Import;
 using RevitScheduleSync.Revit.Schedules;
 using RevitScheduleSync.Services;
 
@@ -21,16 +23,30 @@ namespace RevitScheduleSync.Revit
         private readonly Application _application;
         private readonly Document _document;
         private readonly IWorkbookWriter _writer;
+        private readonly IWorkbookReader _reader;
         private readonly ILogger _logger;
         private readonly ScheduleAnalyser _analyser;
 
-        public RevitScheduleOperations(Application application, Document document, IWorkbookWriter writer, ILogger logger)
+        public RevitScheduleOperations(
+            Application application, Document document, IWorkbookWriter writer, IWorkbookReader reader, ILogger logger)
         {
             _application = application;
             _document = document;
             _writer = writer;
+            _reader = reader;
             _logger = logger;
             _analyser = new ScheduleAnalyser(document, logger);
+        }
+
+        public ChangeSet AnalyseImport(string workbookPath)
+        {
+            _logger.Info($"Import analysis started: '{System.IO.Path.GetFileName(workbookPath)}'.");
+
+            // 1. Read the workbook (no Revit API).
+            var workbook = _reader.Read(workbookPath);
+
+            // 2. Compare with the model (read-only Revit API, no transaction).
+            return new ImportAnalyser(_document, _logger).Analyse(workbook);
         }
 
         public IReadOnlyList<ScheduleAnalysis> Analyse(IReadOnlyList<ScheduleSummary> schedules) =>

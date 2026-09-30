@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using RevitScheduleSync.Models;
+using RevitScheduleSync.Models.Import;
 
 namespace RevitScheduleSync.Services
 {
@@ -13,6 +14,9 @@ namespace RevitScheduleSync.Services
         IReadOnlyList<ScheduleAnalysis> Analyse(IReadOnlyList<ScheduleSummary> schedules);
 
         ExportResult Export(IReadOnlyList<ScheduleAnalysis> analyses, ExportOptions options);
+
+        /// <summary>Reads a workbook and compares it with the model. Read-only: never writes to the model.</summary>
+        ChangeSet AnalyseImport(string workbookPath);
     }
 
     public sealed class ExportOptions

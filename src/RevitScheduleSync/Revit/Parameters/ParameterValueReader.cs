@@ -16,7 +16,11 @@ namespace RevitScheduleSync.Revit.Parameters
         /// <summary>Excel's maximum characters per cell.</summary>
         public const int MaxCellText = 32767;
 
-        public static ExportCell Read(Parameter parameter, ExportColumn column, FormatOptions? fieldFormat)
+        public static ExportCell Read(Parameter parameter, ExportColumn column, FormatOptions? fieldFormat) =>
+            Read(parameter, column.Kind, column.ExportUnitTypeId, fieldFormat);
+
+        /// <summary>Same conversion, from the column description stored in the workbook (used by import).</summary>
+        public static ExportCell Read(Parameter parameter, CellKind kind, string exportUnitTypeId, FormatOptions? fieldFormat)
         {
             bool hasValue = parameter.HasValue;
             string display = SafeDisplay(parameter, fieldFormat);
@@ -34,7 +38,7 @@ namespace RevitScheduleSync.Revit.Parameters
                     int value = parameter.AsInteger();
                     string raw = value.ToString(CultureInfo.InvariantCulture);
 
-                    if (column.Kind == CellKind.YesNo)
+                    if (kind == CellKind.YesNo)
                     {
                         if (!hasValue)
                         {
@@ -44,7 +48,7 @@ namespace RevitScheduleSync.Revit.Parameters
                         return Cell(value != 0 ? "Yes" : "No", raw, value != 0 ? "1" : "0", display, true);
                     }
 
-                    if (column.Kind == CellKind.Integer)
+                    if (kind == CellKind.Integer)
                     {
                         return hasValue
                             ? Cell((double)value, raw, raw, display, true)
@@ -64,9 +68,9 @@ namespace RevitScheduleSync.Revit.Parameters
                         return Cell(null, raw, string.Empty, display, false);
                     }
 
-                    double exported = string.IsNullOrEmpty(column.ExportUnitTypeId)
+                    double exported = string.IsNullOrEmpty(exportUnitTypeId)
                         ? internalValue
-                        : UnitUtils.ConvertFromInternalUnits(internalValue, new ForgeTypeId(column.ExportUnitTypeId));
+                        : UnitUtils.ConvertFromInternalUnits(internalValue, new ForgeTypeId(exportUnitTypeId));
                     return Cell(exported, raw, exported.ToString("R", CultureInfo.InvariantCulture), display, true);
                 }
 

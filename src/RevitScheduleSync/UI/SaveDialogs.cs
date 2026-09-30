@@ -30,6 +30,20 @@ namespace RevitScheduleSync.UI
             return dialog.ShowDialog() == true ? dialog.FileName : null;
         }
 
+        /// <summary>Asks for the workbook to import. Returns null when the user cancels.</summary>
+        public static string? ChooseImportPath()
+        {
+            var dialog = new OpenFileDialog
+            {
+                Title = "Import schedules from Excel",
+                Filter = "Excel workbook (*.xlsx)|*.xlsx",
+                CheckFileExists = true,
+                Multiselect = false
+            };
+
+            return dialog.ShowDialog() == true ? dialog.FileName : null;
+        }
+
         private static string GetInitialDirectory(Document document)
         {
             try

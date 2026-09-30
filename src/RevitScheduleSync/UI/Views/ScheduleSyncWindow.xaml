@@ -34,6 +34,18 @@
                 <views:ExportResultView />
             </DataTemplate>
 
+            <DataTemplate DataType="{x:Type vm:ImportViewModel}">
+                <ContentControl Content="{Binding CurrentStep}" />
+            </DataTemplate>
+
+            <DataTemplate DataType="{x:Type vm:ImportStartViewModel}">
+                <views:ImportStartView />
+            </DataTemplate>
+
+            <DataTemplate DataType="{x:Type vm:ImportAnalysisViewModel}">
+                <views:ImportAnalysisView />
+            </DataTemplate>
+
             <DataTemplate DataType="{x:Type vm:WorkflowSectionViewModel}">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                 <StackPanel>

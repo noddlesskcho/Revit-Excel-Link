@@ -17,8 +17,8 @@ Status of the V1 definition of done (spec section 32) and the test cases (sectio
 | Excel not required | ClosedXML only, no Office Interop/COM | By design |
 | Row identity by `Element.UniqueId` | Hidden locked column A + `[Rows]` metadata | Automated (sorting, deleted/added/copied rows) |
 | Parameter identity preserved | Built-in name / shared GUID / project parameter; never display names | Automated (metadata round-trip); manual (Phase 2) |
-| Instance parameters round-trip | Export → review → apply | Manual (Phase 7) — reported "looks good" |
-| Supported type parameters round-trip | Type change approval with affected instance count | Manual (Phase 7) — reported "looks good" |
+| Instance parameters round-trip | Export → review → apply | **Re-test**: Apply failed at its confirmation dialog until commit 2a4d827 (2026-10-01) |
+| Supported type parameters round-trip | Type change approval with affected instance count | **Re-test** (same dialog fix) |
 | Units handled correctly | `ConvertFromInternalUnits` on export, `ConvertToInternalUnits` / `UnitFormatUtils.TryParse` on import, tolerance compare | Automated (tolerance); manual (Phase 3 step 6) |
 | Read-only parameters cannot be written | Locked cells; analyser + applier re-check `IsReadOnly`; family/type identity protected | Automated (locking); manual |
 | Changes analysed before import | Import analysis without any transaction | Manual (Phase 5) |

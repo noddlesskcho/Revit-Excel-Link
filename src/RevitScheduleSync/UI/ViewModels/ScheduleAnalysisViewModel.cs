@@ -88,8 +88,8 @@ namespace RevitScheduleSync.UI.ViewModels
         public ScheduleSupport Support => Analysis.Schedule.Support;
 
         public string LayoutText => Analysis.Schedule.Support == ScheduleSupport.PresentationOnly
-            ? "Grouped · presentation only"
-            : "Itemised · editable sync";
+            ? "GROUPED — initially restricted"
+            : "ITEMISED — editable sync supported";
 
         public string CountsText => HasError
             ? "Not analysed"

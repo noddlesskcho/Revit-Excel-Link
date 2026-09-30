@@ -184,8 +184,8 @@ namespace RevitScheduleSync.Revit.Schedules
             }
 
             return definition.IsItemized
-                ? (ScheduleSupport.EditableSync, "Itemised — editable sync supported.")
-                : (ScheduleSupport.PresentationOnly, "Grouped — presentation export only, re-import not supported.");
+                ? (ScheduleSupport.EditableSync, "ITEMISED — editable sync supported.")
+                : (ScheduleSupport.PresentationOnly, "GROUPED — initially restricted: presentation export only, re-import not supported.");
         }
 
         private string GetCategoryName(ElementId categoryId)

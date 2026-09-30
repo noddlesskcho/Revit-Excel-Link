@@ -48,12 +48,13 @@ namespace RevitScheduleSync.Excel
 
         public static readonly string[] RowsHeader =
         [
-            "SheetName", "ElementUniqueId", "ElementId", "TypeUniqueId", "TypeId", "Category", "ExportedRow"
+            "SheetName", "ElementUniqueId", "ElementId", "TypeUniqueId", "TypeId", "Category", "ExportedRow",
+            "InGroup", "DesignOption"
         ];
 
         public static readonly string[] ValuesHeader =
         [
-            "SheetName", "ElementUniqueId", "FieldId", "HasValue", "Raw", "Normalised", "Display"
+            "SheetName", "ElementUniqueId", "FieldId", "HasValue", "Raw", "Normalised", "Display", "LockReason"
         ];
     }
 }

@@ -84,10 +84,12 @@ namespace RevitScheduleSync.Excel
                     [
                         name, exportRow.ElementUniqueId, Text(exportRow.ElementId), exportRow.TypeUniqueId ?? string.Empty,
                         exportRow.TypeId.HasValue ? Text(exportRow.TypeId.Value) : string.Empty, exportRow.CategoryName,
-                        Text(WorkbookSchema.FirstDataRow + r)
+                        Text(WorkbookSchema.FirstDataRow + r), exportRow.InGroup ? "true" : "false",
+                        exportRow.DesignOptionName ?? string.Empty
                     ]);
 
-                    // Original values of editable cells: "A" in the three-way comparison on import.
+                    // Original values of cells in editable columns: "A" in the three-way comparison on import.
+                    // Locked cells are included (with their reason) so an edit to them can be reported, not applied.
                     for (int c = 0; c < sheet.Columns.Count; c++)
                     {
                         if (!sheet.Columns[c].IsEditable)
@@ -104,7 +106,8 @@ namespace RevitScheduleSync.Excel
                         values.Add(
                         [
                             name, exportRow.ElementUniqueId, Text(sheet.Columns[c].Field.FieldId),
-                            cell.HasValue ? "true" : "false", cell.Raw, cell.Normalised, cell.Display
+                            cell.HasValue ? "true" : "false", cell.Raw, cell.Normalised, cell.Display,
+                            cell.ForceReadOnly ? cell.LockReason ?? "locked" : string.Empty
                         ]);
                     }
                 }

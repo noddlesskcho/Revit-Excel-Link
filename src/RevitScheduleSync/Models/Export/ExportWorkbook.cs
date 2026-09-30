@@ -65,7 +65,7 @@ namespace RevitScheduleSync.Models.Export
         Reference
     }
 
-    public sealed class ExportColumn
+    public sealed record ExportColumn
     {
         public required ScheduleFieldInfo Field { get; init; }
         public required CellKind Kind { get; init; }
@@ -93,11 +93,18 @@ namespace RevitScheduleSync.Models.Export
         public string? TypeUniqueId { get; init; }
         public long? TypeId { get; init; }
         public required string CategoryName { get; init; }
+
+        /// <summary>Element is a member of a model group: its instance values are locked in V1.</summary>
+        public bool InGroup { get; init; }
+
+        /// <summary>Design option name when the element is not in the main model.</summary>
+        public string? DesignOptionName { get; init; }
+
         public required IReadOnlyList<ExportCell> Cells { get; init; }
     }
 
     /// <summary>One exported value plus the original values needed for three-way comparison on import.</summary>
-    public sealed class ExportCell
+    public sealed record ExportCell
     {
         public static readonly ExportCell Unavailable = new()
         {
@@ -127,7 +134,10 @@ namespace RevitScheduleSync.Models.Export
         /// <summary>False when the element does not carry the parameter (cell is locked and blank).</summary>
         public required bool IsAvailable { get; init; }
 
-        /// <summary>Lock this single cell even in an editable column (e.g. value too long for Excel).</summary>
+        /// <summary>Lock this single cell even in an editable column.</summary>
         public bool ForceReadOnly { get; init; }
+
+        /// <summary>Why the cell was locked (read-only on this element, model group, too long ...).</summary>
+        public string? LockReason { get; init; }
     }
 }

@@ -32,6 +32,9 @@ namespace RevitScheduleSync.Revit.Schedules
             [UnitTypeId.StationingMeters.TypeId] = UnitTypeId.Meters
         };
 
+        private const string LockElementReadOnly = "read-only on that element";
+        private const string LockInGroup = "element is in a model group";
+
         private readonly Document _document;
         private readonly ParameterLocator _parameters;
         private readonly ILogger _logger;
@@ -88,10 +91,21 @@ namespace RevitScheduleSync.Revit.Schedules
             foreach (var element in elements)
             {
                 var type = GetType(element, typeCache);
+                bool inGroup = element.GroupId != ElementId.InvalidElementId;
                 var cells = new ExportCell[fields.Count];
                 for (int i = 0; i < fields.Count; i++)
                 {
-                    cells[i] = ReadCell(element, type, fields[i], allColumns[i], scheduleFields[i], formats[i]);
+                    var cell = ReadCell(element, type, fields[i], allColumns[i], scheduleFields[i], formats[i]);
+
+                    // Model group members: changing an instance value on one member is easy to get wrong
+                    // (group edit rules), so V1 keeps them read-only. Type values are unaffected.
+                    if (inGroup && allColumns[i].IsEditable && !fields[i].IsTypeParameter
+                        && cell.IsAvailable && !cell.ForceReadOnly)
+                    {
+                        cell = cell with { ForceReadOnly = true, LockReason = LockInGroup };
+                    }
+
+                    cells[i] = cell;
                 }
 
                 rows.Add((element, type, cells));
@@ -106,11 +120,14 @@ namespace RevitScheduleSync.Revit.Schedules
                 TypeUniqueId = r.Type?.UniqueId,
                 TypeId = r.Type?.Id.Value,
                 CategoryName = r.Element.Category?.Name ?? string.Empty,
+                InGroup = r.Element.GroupId != ElementId.InvalidElementId,
+                DesignOptionName = SafeDesignOptionName(r.Element),
                 Cells = exportedIndexes.Select(i => r.Cells[i]).ToArray()
             }).ToList();
 
-            var columns = exportedIndexes.Select(i => allColumns[i]).ToList();
+            var columns = LockDuplicateColumns(exportedIndexes.Select(i => allColumns[i]).ToList());
             var notes = new List<string>();
+            AddLockNotes(analysis.Schedule.Name, columns, exportRows, notes);
             if (analysis.Schedule.IncludesLinkedFiles)
             {
                 notes.Add($"{analysis.Schedule.Name}: rows from linked models are not exported.");
@@ -194,7 +211,17 @@ namespace RevitScheduleSync.Revit.Schedules
                     {
                         var target = field.IsTypeParameter ? type : element;
                         var parameter = target == null ? null : _parameters.Find(target, field.Parameter);
-                        return parameter == null ? ExportCell.Unavailable : ParameterValueReader.Read(parameter, column, format);
+                        if (parameter == null)
+                        {
+                            return ExportCell.Unavailable;
+                        }
+
+                        var cell = ParameterValueReader.Read(parameter, column, format);
+
+                        // The column was classified on a sample; Revit decides writability per element.
+                        return column.IsEditable && parameter.IsReadOnly && !cell.ForceReadOnly
+                            ? cell with { ForceReadOnly = true, LockReason = LockElementReadOnly }
+                            : cell;
                     }
 
                     case nameof(ScheduleFieldType.Count):
@@ -245,6 +272,85 @@ namespace RevitScheduleSync.Revit.Schedules
 
             var combined = text.ToString();
             return ParameterValueReader.Text(combined, combined, combined.Length > 0, combined);
+        }
+
+        /// <summary>
+        /// The same parameter shown in two columns would give two competing Excel values for one Revit value.
+        /// Only the first column stays editable; later ones are locked and point to it.
+        /// </summary>
+        private static List<ExportColumn> LockDuplicateColumns(List<ExportColumn> columns)
+        {
+            var firstHeading = new Dictionary<(string Key, bool IsType), string>();
+            for (int i = 0; i < columns.Count; i++)
+            {
+                var column = columns[i];
+                if (!column.IsEditable)
+                {
+                    continue;
+                }
+
+                var key = (column.Field.Parameter.Key, column.Field.IsTypeParameter);
+                if (firstHeading.TryGetValue(key, out var heading))
+                {
+                    columns[i] = column with
+                    {
+                        IsEditable = false,
+                        ReadOnlyReason = $"Same parameter as column \"{heading}\": edit it there."
+                    };
+                }
+                else
+                {
+                    firstHeading[key] = column.Field.Heading;
+                }
+            }
+
+            return columns;
+        }
+
+        /// <summary>Summarises per-cell locks inside editable columns for the export report.</summary>
+        private static void AddLockNotes(string scheduleName, IReadOnlyList<ExportColumn> columns, IReadOnlyList<ExportRow> rows, List<string> notes)
+        {
+            var counts = new Dictionary<string, int>();
+            foreach (var row in rows)
+            {
+                for (int c = 0; c < columns.Count; c++)
+                {
+                    var reason = row.Cells[c].LockReason;
+                    if (columns[c].IsEditable && reason != null)
+                    {
+                        counts[reason] = counts.TryGetValue(reason, out var n) ? n + 1 : 1;
+                    }
+                }
+            }
+
+            foreach (var (reason, count) in counts)
+            {
+                notes.Add($"{scheduleName}: {count} cell(s) locked in editable columns ({reason}).");
+            }
+
+            int duplicates = columns.Count(c => c.ReadOnlyReason?.StartsWith("Same parameter as column", StringComparison.Ordinal) == true);
+            if (duplicates > 0)
+            {
+                notes.Add($"{scheduleName}: {duplicates} duplicate parameter column(s) locked; edit the first occurrence.");
+            }
+
+            int optionRows = rows.Count(r => r.DesignOptionName != null);
+            if (optionRows > 0)
+            {
+                notes.Add($"{scheduleName}: {optionRows} row(s) belong to a design option.");
+            }
+        }
+
+        private static string? SafeDesignOptionName(Element element)
+        {
+            try
+            {
+                return element.DesignOption?.Name;
+            }
+            catch (Exception)
+            {
+                return null;
+            }
         }
 
         private static ExportColumn MakeColumn(ScheduleFieldInfo field, bool sheetEditable)

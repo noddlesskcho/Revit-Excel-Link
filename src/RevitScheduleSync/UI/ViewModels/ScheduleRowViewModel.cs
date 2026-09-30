@@ -63,8 +63,8 @@ namespace RevitScheduleSync.UI.ViewModels
 
         public string SupportText => Summary.Support switch
         {
-            ScheduleSupport.EditableSync => "Editable sync",
-            ScheduleSupport.PresentationOnly => "Presentation only",
+            ScheduleSupport.EditableSync => "ITEMISED — editable sync",
+            ScheduleSupport.PresentationOnly => "GROUPED — restricted",
             _ => "Not supported"
         };
 

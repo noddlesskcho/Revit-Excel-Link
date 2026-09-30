@@ -101,7 +101,8 @@ namespace RevitScheduleSync.Revit.Parameters
                     Display = cut,
                     HasValue = hasValue,
                     IsAvailable = true,
-                    ForceReadOnly = true
+                    ForceReadOnly = true,
+                    LockReason = "value too long for Excel"
                 };
             }
 

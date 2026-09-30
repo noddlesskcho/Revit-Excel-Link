@@ -29,7 +29,7 @@ namespace RevitScheduleSync.Excel
             int lastColumn = WorkbookSchema.FirstFieldColumn + sheet.Columns.Count - 1;
             int lastRow = WorkbookSchema.FirstDataRow + sheet.Rows.Count - 1;
 
-            WriteTitle(ws, sheet, "Itemised — edit white (instance) and blue (type) cells, then import.");
+            WriteTitle(ws, sheet, "ITEMISED — editable sync supported. Edit white (instance) and blue (type) cells.");
             WriteLegend(ws);
 
             // Identity column: hidden and locked. Survives sorting and filtering, unlike row numbers.

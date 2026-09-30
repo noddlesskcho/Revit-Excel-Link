@@ -1,0 +1,21 @@
+Schedule Sync for Revit - third-party components
+
+This product includes the following open-source components, redistributed unmodified
+under their licences. Full licence texts are available at the URLs given.
+
+ClosedXML 0.105.1                     MIT License         https://github.com/ClosedXML/ClosedXML
+ClosedXML.Parser 2.0.0                MIT License         https://github.com/ClosedXML/ClosedXML.Parser
+DocumentFormat.OpenXml 3.1.1          MIT License         https://github.com/dotnet/Open-XML-SDK
+DocumentFormat.OpenXml.Framework 3.1.1 MIT License        https://github.com/dotnet/Open-XML-SDK
+ExcelNumberFormat 1.1.0               MIT License         https://github.com/andersnm/ExcelNumberFormat
+RBush (RBush.Signed)                  MIT License         https://github.com/viceroypenguin/RBush
+SixLabors.Fonts 1.0.0                 Apache License 2.0  https://github.com/SixLabors/Fonts
+
+MIT License (summary): permission is granted, free of charge, to use, copy, modify, merge,
+publish, distribute, sublicense and/or sell copies of the software, provided the copyright
+notice and permission notice are included. The software is provided "as is", without warranty.
+
+Apache License 2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+Autodesk, Revit and Autodesk App Store are registered trademarks or trademarks of Autodesk, Inc.
+Schedule Sync for Revit is not produced or endorsed by Autodesk, Inc.

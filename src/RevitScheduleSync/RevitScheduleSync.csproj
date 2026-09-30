@@ -16,9 +16,9 @@
     <RootNamespace>RevitScheduleSync</RootNamespace>
     <AssemblyName>RevitScheduleSync</AssemblyName>
 
-    <Version>0.1.0</Version>
-    <Product>Revit Schedule Sync</Product>
-    <Company>Revit Schedule Sync</Company>
+    <Version>1.0.0</Version>
+    <Product>Schedule Sync for Revit</Product>
+    <Company>Schedule Sync for Revit</Company>
 
     <!-- Plugin-style output: copy NuGet dependencies next to the add-in DLL and emit a .deps.json
          so Revit's isolated add-in load context can resolve ClosedXML and its dependencies. -->

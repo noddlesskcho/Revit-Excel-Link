@@ -8,7 +8,8 @@ namespace RevitScheduleSync.App
     /// Draws the ribbon icon in code (a small table with a sync arrow),
     /// so no image files need to be shipped or resolved via pack URIs.
     /// </summary>
-    internal static class RibbonIcons
+    /// <remarks>Public so tools/IconExport can render the same icon for the App Store package.</remarks>
+    public static class RibbonIcons
     {
         private static readonly Color Ink = Color.FromRgb(0x3C, 0x4A, 0x5A);
         private static readonly Color Accent = Color.FromRgb(0x06, 0x96, 0xD7);

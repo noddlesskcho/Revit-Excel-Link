@@ -1,59 +1,64 @@
-# Revit Schedule Sync
+# Schedule Sync for Revit
 
-Revit 2026.5 add-in for safe, auditable Revit schedule ↔ Excel synchronisation.
+Repository and assembly name: `RevitScheduleSync`.
 
-Status: **Phase 0 — project foundation** (ribbon button, WPF window, logging, error boundary).
-No schedule extraction or Excel logic yet.
+Revit 2026 add-in for safe, auditable schedule ↔ Excel synchronisation: export schedules to .xlsx,
+edit values in Excel, then analyse, review and apply the changes back to the model.
+
+Status: **V1 (1.0.0)** — export, import analysis (three-way comparison), review, apply (one Undo step),
+report and history. See [docs/V1-checklist.md](docs/V1-checklist.md).
 
 ## Requirements
 
-- Revit 2026.5 (hosts the .NET 10 runtime)
-- .NET 10 SDK (10.0.401 or later)
+- Revit 2026.5 (hosts the .NET 10 runtime), Windows 64-bit
+- .NET 10 SDK (10.0.401 or later) to build
 - Microsoft Excel is **not** required
 
-## Build
+## Build and develop
 
 ```
 dotnet build RevitScheduleSync.sln -c Debug
 ```
 
-A Debug build copies the add-in into the per-user Revit add-ins folder automatically.
-Close Revit before building, otherwise the copy fails with a warning (DLL locked).
+A Debug build copies the add-in to `%APPDATA%\Autodesk\Revit\Addins\2026\` (close Revit first; the build
+warns "NOT deployed" if Revit holds the files). Skip with `-p:DeployToRevit=false`.
 
-- Skip deployment: `-p:DeployToRevit=false`
-- Revit installed elsewhere: `-p:RevitInstallDir="D:\Autodesk\Revit 2026\\"`
+## Tests
 
-## Deployed layout
+Revit-free logic (comparison, workbook layer, reports, review scoping, 20,000-row performance):
 
 ```
-%APPDATA%\Autodesk\Revit\Addins\2026\
-├── RevitScheduleSync.addin
-└── RevitScheduleSync\
-    ├── RevitScheduleSync.dll
-    ├── RevitScheduleSync.deps.json
-    ├── ClosedXML.dll, DocumentFormat.OpenXml*.dll, ... (dependencies)
+dotnet test RevitScheduleSync.sln -c Release
 ```
 
-The manifest sets `UseRevitContext=False`, so Revit 2026 loads the add-in and its
-dependencies into an isolated assembly load context.
+## Release package (Autodesk App Store bundle)
 
-## Logs
+```
+powershell -ExecutionPolicy Bypass -File packaging\build-package.ps1
+```
 
-`%LOCALAPPDATA%\RevitScheduleSync\Logs\ScheduleSync-yyyyMMdd.log` (kept 30 days).
-The window footer has an "Open log folder" link.
+Produces `artifacts\ScheduleSyncForRevit.bundle` and `artifacts\ScheduleSyncForRevit-<version>.bundle.zip`.
+`-Install` copies the bundle to `%APPDATA%\Autodesk\ApplicationPlugins` for a local test (remove the development
+add-in first: both use the same AddInId). Listing draft: [docs/app-store-listing.md](docs/app-store-listing.md).
 
 ## Source layout
 
 ```
 src/RevitScheduleSync/
-├── App/          IExternalApplication, ribbon, add-in host
-├── Commands/     external commands, availability, exception boundary
-├── UI/           WPF window, view models, theme
-├── Models/       plain data objects (no Revit objects)
-├── Excel/        Excel layer (ClosedXML)          — grows in Phase 3
-├── Services/     error reporting, user-facing exceptions
-└── Logging/      ILogger, FileLogger
+├── App/             IExternalApplication, ribbon, add-in host
+├── Commands/        external command, availability, exception boundary
+├── UI/              WPF window, view models, views, theme
+├── Models/          plain data (no Revit objects): schedules, export, import, reports
+├── Revit/           Schedules (discovery, analysis, export), Parameters, Documents, Import, Transactions
+├── Excel/           workbook layout (WorkbookSchema), ClosedXML writer and reader
+├── Sync/            pure comparison logic (three-way, fingerprint)
+├── Services/        prompts, errors, report store, operations interface
+└── Logging/         ILogger, FileLogger
+tests/RevitScheduleSync.Tests/   xUnit tests (no Revit)
+tools/IconExport/                renders the add-in icon to PNG for the package
+packaging/                       bundle manifest, add-in manifest, help, icons, build script
 ```
 
-Planned folders added in later phases: `Revit/Schedules`, `Revit/Elements`,
-`Revit/Parameters`, `Revit/Transactions`, `Sync`, `Validation`.
+## Logs and reports
+
+`%LOCALAPPDATA%\RevitScheduleSync\Logs` (kept 30 days) and `%LOCALAPPDATA%\RevitScheduleSync\Reports`.

@@ -298,7 +298,7 @@ namespace RevitScheduleSync.Excel
                 validation.IgnoreBlanks = true;
                 validation.ShowErrorMessage = true;
                 validation.ErrorStyle = XLErrorStyle.Stop;
-                validation.ErrorTitle = "Revit Schedule Sync";
+                validation.ErrorTitle = "Schedule Sync for Revit";
             }
         }
 

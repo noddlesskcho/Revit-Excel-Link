@@ -151,7 +151,7 @@ namespace RevitScheduleSync.Tests
             }
 
             var error = Assert.Throws<ScheduleSyncException>(() => Read(path));
-            Assert.Contains("not created by Revit Schedule Sync", error.Message);
+            Assert.Contains("not created by Schedule Sync for Revit", error.Message);
         }
 
         [Fact]

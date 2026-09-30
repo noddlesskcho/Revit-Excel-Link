@@ -38,7 +38,7 @@ namespace RevitScheduleSync.Excel
             var sheetNames = workbook.Sheets.Select(s => names.Allocate(s.ScheduleName)).ToList();
 
             using var book = new XLWorkbook();
-            book.Properties.Title = $"Revit Schedule Sync export — {workbook.Info.Fingerprint.Title}";
+            book.Properties.Title = $"Schedule Sync for Revit export — {workbook.Info.Fingerprint.Title}";
             book.Properties.Comments = "Edit only the white and blue cells. Do not rename sheets or remove the hidden column A.";
 
             for (int i = 0; i < workbook.Sheets.Count; i++)

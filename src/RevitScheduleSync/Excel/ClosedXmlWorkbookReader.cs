@@ -33,7 +33,7 @@ namespace RevitScheduleSync.Excel
             if (!book.Worksheets.TryGetWorksheet(WorkbookSchema.MetadataSheetName, out var metadataSheet))
             {
                 throw new ScheduleSyncException(
-                    "This workbook was not created by Revit Schedule Sync, or its hidden metadata sheet was removed. " +
+                    "This workbook was not created by Schedule Sync for Revit, or its hidden metadata sheet was removed. " +
                     "Only workbooks exported by Schedule Sync can be imported.");
             }
 

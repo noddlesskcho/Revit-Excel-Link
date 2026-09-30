@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Add-in manifest used inside the App Store bundle (Contents\2026\). The DLL sits next to this file.
+     Same AddInId as the development manifest: do not install both at once. -->
+<RevitAddIns>
+  <AddIn Type="Application">
+    <Name>Schedule Sync for Revit</Name>
+    <Assembly>RevitScheduleSync.dll</Assembly>
+    <AddInId>5afc7788-f203-4ec5-bf1b-d05b2042fe37</AddInId>
+    <FullClassName>RevitScheduleSync.App.ScheduleSyncApplication</FullClassName>
+    <VendorId>RSSY</VendorId>
+    <VendorDescription>Schedule Sync for Revit - safe schedule to Excel synchronisation</VendorDescription>
+  </AddIn>
+  <!-- Own assembly load context: ClosedXML / DocumentFormat.OpenXml cannot clash with Revit or other add-ins. -->
+  <ManifestSettings>
+    <UseRevitContext>False</UseRevitContext>
+  </ManifestSettings>
+</RevitAddIns>

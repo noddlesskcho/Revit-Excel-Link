@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Schedule Sync for Revit — Help</title>
+<style>
+  :root { --text: #1f2933; --muted: #5f6b7a; --accent: #0696d7; --border: #dadde2; --soft: #f4f5f7; }
+  body { margin: 0; background: #fff; color: var(--text); font: 15px/1.55 "Segoe UI", system-ui, sans-serif; }
+  main { max-width: 820px; margin: 0 auto; padding: 32px 16px 64px; }
+  h1 { font-size: 26px; margin: 0 0 4px; }
+  h2 { font-size: 18px; margin: 32px 0 8px; border-bottom: 1px solid var(--border); padding-bottom: 4px; }
+  .lead { color: var(--muted); margin: 0 0 24px; }
+  code { background: var(--soft); padding: 1px 5px; border-radius: 3px; }
+  table { border-collapse: collapse; width: 100%; margin: 8px 0; }
+  th, td { text-align: left; border-bottom: 1px solid var(--border); padding: 6px 8px; vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; }
+  .chip { display: inline-block; padding: 0 6px; border-radius: 3px; border: 1px solid var(--border); }
+  .type { background: #f1f6fd; }
+  .ro { background: #f5f6f8; color: var(--muted); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Schedule Sync for Revit</h1>
+  <p class="lead">Export Revit schedules to Excel, edit parameter values there, and bring the changes back into the model — with a full review before anything is written.</p>
+
+  <h2>Requirements</h2>
+  <ul>
+    <li>Autodesk Revit 2026 (2026.5 or later), Windows 64-bit.</li>
+    <li>Microsoft Excel is <strong>not</strong> required to create or read the workbooks; any .xlsx editor works.</li>
+  </ul>
+
+  <h2>Getting started</h2>
+  <p>Open a project and click <strong>Add-Ins › Schedule Sync › Schedule Sync</strong>. The window has three areas: <strong>Export</strong>, <strong>Import</strong> and <strong>History</strong>.</p>
+
+  <h2>Export</h2>
+  <ol>
+    <li><strong>Select schedules.</strong> Search, tick one or more schedules. Itemised schedules support editing; grouped schedules are exported as a read-only copy.</li>
+    <li><strong>Analyse.</strong> Each column is traced to its real Revit parameter and marked Editable, Editable (type), Calculated, Read-only or Related element.</li>
+    <li><strong>Export to Excel.</strong> Choose a file name. One sheet per schedule.</li>
+  </ol>
+  <p>In the workbook:</p>
+  <table>
+    <tr><th>Cell</th><th>Meaning</th></tr>
+    <tr><td><span class="chip">white</span></td><td>Editable instance value.</td></tr>
+    <tr><td><span class="chip type">blue</span></td><td>Editable type value — one change applies to every element of that type.</td></tr>
+    <tr><td><span class="chip ro">grey</span></td><td>Read-only (calculated, system or locked value). Changes are never applied.</td></tr>
+  </table>
+  <p>Numbers are in the unit shown in the column heading comment. Yes/No columns offer a drop-down. Do not rename sheets, delete the hidden first column, or edit the hidden metadata sheet.</p>
+
+  <h2>Import</h2>
+  <ol>
+    <li>Save the workbook in Excel, then choose it in <strong>Import</strong>.</li>
+    <li>The workbook is checked against the open project. A workbook from another project is blocked.</li>
+    <li>Every value is compared three ways: the exported value, the current Revit value and the Excel value.
+      <table>
+        <tr><th>Status</th><th>Meaning</th></tr>
+        <tr><td>Change</td><td>Edited in Excel only — proposed for Apply.</td></tr>
+        <tr><td>Type change</td><td>Type value edited — needs your approval (shows affected instances).</td></tr>
+        <tr><td>Revit changed</td><td>Changed in Revit since export, Excel untouched — Revit is kept.</td></tr>
+        <tr><td>Conflict</td><td>Changed differently in Revit and Excel, or rows disagree — you decide; nothing is overwritten silently.</td></tr>
+        <tr><td>Read only / Invalid / Missing / Blocked</td><td>Reported, never applied.</td></tr>
+      </table>
+    </li>
+    <li>Review per schedule tab, set decisions, then click <strong>Apply</strong> and confirm.</li>
+  </ol>
+  <p>All changes are made in one step: <strong>Undo (Ctrl+Z)</strong> in Revit reverses the whole import. A report is shown and saved to History.</p>
+
+  <h2>Good to know</h2>
+  <ul>
+    <li>Formula, percentage and related-element columns (for example Room: Name) are exported blank.</li>
+    <li>Hidden schedule fields and rows from linked models are not exported.</li>
+    <li>Instance values of elements inside model groups are read-only.</li>
+    <li>Revit cannot clear number, Yes/No or reference values through the API; leave them filled.</li>
+    <li>With “Lock read-only cells” on, Excel allows filtering but not sorting. Turn it off at export to sort.</li>
+    <li>Reference values (Level, Phase, Material …) are matched by exact name; element ids are never accepted.</li>
+  </ul>
+
+  <h2>Privacy</h2>
+  <p>Schedule Sync works entirely on your computer. It sends no data anywhere. Logs are kept in <code>%LOCALAPPDATA%\RevitScheduleSync\Logs</code> (30 days) and import reports in <code>%LOCALAPPDATA%\RevitScheduleSync\Reports</code>.</p>
+
+  <h2>Support</h2>
+  <p>Contact: [Support email] — please attach the log file from <em>Open log folder</em> in the Schedule Sync window.</p>
+</main>
+</body>
+</html>

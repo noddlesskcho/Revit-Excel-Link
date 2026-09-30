@@ -14,12 +14,16 @@ namespace RevitScheduleSync.UI.ViewModels
         private readonly ILogger _logger;
         private SectionViewModel _selectedSection;
 
-        public MainViewModel(SessionInfo session, ScheduleScanResult scheduleScan, ILogger logger)
+        public MainViewModel(
+            SessionInfo session,
+            ScheduleScanResult scheduleScan,
+            Func<IReadOnlyList<ScheduleSummary>, IReadOnlyList<ScheduleAnalysis>> analyseSchedules,
+            ILogger logger)
         {
             Session = session;
             _logger = logger;
 
-            Export = new ExportViewModel(scheduleScan, logger, ReportError);
+            Export = new ExportViewModel(scheduleScan, analyseSchedules, logger, ReportError);
             Sections =
             [
                 Export,

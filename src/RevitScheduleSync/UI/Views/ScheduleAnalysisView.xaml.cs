@@ -2,9 +2,9 @@ using System.Windows.Controls;
 
 namespace RevitScheduleSync.UI.Views
 {
-    public partial class ExportView : UserControl
+    public partial class ScheduleAnalysisView : UserControl
     {
-        public ExportView()
+        public ScheduleAnalysisView()
         {
             InitializeComponent();
         }

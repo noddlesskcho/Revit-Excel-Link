@@ -1,4 +1,4 @@
-<UserControl x:Class="RevitScheduleSync.UI.Views.ExportView"
+<UserControl x:Class="RevitScheduleSync.UI.Views.ScheduleSelectionView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
@@ -178,7 +178,7 @@
             <Button Grid.Column="1" Content="Analyse ›" Style="{StaticResource Button.Primary}"
                     Command="{Binding AnalyseCommand}"
                     ToolTipService.ShowOnDisabled="True"
-                    ToolTip="Schedule analysis arrives in Phase 2." />
+                    ToolTip="Analyse the fields of the selected schedules" />
         </Grid>
     </Grid>
 </UserControl>

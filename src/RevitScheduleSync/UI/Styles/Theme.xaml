@@ -132,6 +132,42 @@
         <Setter Property="TextElement.Foreground" Value="{StaticResource Brush.TextMuted}" />
     </Style>
 
+    <Style x:Key="StepPill.Done" TargetType="Border" BasedOn="{StaticResource StepPill}">
+        <Setter Property="TextElement.Foreground" Value="{StaticResource Brush.Accent}" />
+    </Style>
+
+    <!-- Field classification badges: green = editable instance, blue = editable type
+         (visually distinct because one edit affects many elements), grey = read-only, red tint = unsupported. -->
+    <Style x:Key="FieldBadge" TargetType="Border">
+        <Setter Property="CornerRadius" Value="3" />
+        <Setter Property="Padding" Value="6,1" />
+        <Setter Property="HorizontalAlignment" Value="Left" />
+        <Setter Property="Background" Value="#EEF0F2" />
+        <Setter Property="TextElement.Foreground" Value="#5F6B7A" />
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding Classification}" Value="EditableInstance">
+                <Setter Property="Background" Value="#E6F4EA" />
+                <Setter Property="TextElement.Foreground" Value="#1E6B34" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding Classification}" Value="EditableType">
+                <Setter Property="Background" Value="#E3EEFB" />
+                <Setter Property="TextElement.Foreground" Value="#1D4F91" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding Classification}" Value="Unsupported">
+                <Setter Property="Background" Value="#FBEAEA" />
+                <Setter Property="TextElement.Foreground" Value="#8A2A2A" />
+            </DataTrigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style x:Key="NoteBox" TargetType="Border">
+        <Setter Property="Background" Value="#FFF8E8" />
+        <Setter Property="BorderBrush" Value="#F0DDB0" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="3" />
+        <Setter Property="Padding" Value="10,6" />
+    </Style>
+
     <Style x:Key="Button.Primary" TargetType="Button" BasedOn="{StaticResource Button.Base}">
         <Setter Property="Background" Value="{StaticResource Brush.Accent}" />
         <Setter Property="BorderBrush" Value="{StaticResource Brush.Accent}" />

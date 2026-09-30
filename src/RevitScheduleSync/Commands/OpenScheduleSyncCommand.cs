@@ -4,6 +4,7 @@ using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
 using RevitScheduleSync.App;
 using RevitScheduleSync.Models;
+using RevitScheduleSync.Revit.Schedules;
 using RevitScheduleSync.UI.ViewModels;
 using RevitScheduleSync.UI.Views;
 
@@ -33,7 +34,12 @@ namespace RevitScheduleSync.Commands
                 }
 
                 var session = SessionInfo.Create(uiApplication.Application, document, AddinHost.FileLogger?.LogDirectory);
-                var viewModel = new MainViewModel(session, logger);
+
+                // Read schedules up front, in API context. The window is modal, so the model
+                // cannot change while the user browses this snapshot.
+                var scheduleScan = new ScheduleCatalog(document, logger).Scan();
+
+                var viewModel = new MainViewModel(session, scheduleScan, logger);
                 var window = new ScheduleSyncWindow(viewModel);
 
                 // Parent the window to Revit so it stays on top of Revit and centres on it.

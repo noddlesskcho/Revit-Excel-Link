@@ -119,4 +119,123 @@
         <Setter Property="Padding" Value="10,4" />
     </Style>
 
+    <!-- Step indicator states: the current step is solid, later steps are outlined. -->
+    <Style x:Key="StepPill.Current" TargetType="Border" BasedOn="{StaticResource StepPill}">
+        <Setter Property="Background" Value="{StaticResource Brush.Accent}" />
+        <Setter Property="TextElement.Foreground" Value="White" />
+    </Style>
+
+    <Style x:Key="StepPill.Upcoming" TargetType="Border" BasedOn="{StaticResource StepPill}">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderBrush" Value="{StaticResource Brush.Border}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="TextElement.Foreground" Value="{StaticResource Brush.TextMuted}" />
+    </Style>
+
+    <Style x:Key="Button.Primary" TargetType="Button" BasedOn="{StaticResource Button.Base}">
+        <Setter Property="Background" Value="{StaticResource Brush.Accent}" />
+        <Setter Property="BorderBrush" Value="{StaticResource Brush.Accent}" />
+        <Setter Property="Foreground" Value="White" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Root"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="3"
+                            Padding="{TemplateBinding Padding}">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Root" Property="Background" Value="{StaticResource Brush.AccentHover}" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="Root" Property="Opacity" Value="0.45" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="SearchBox" TargetType="TextBox">
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="Padding" Value="6,5" />
+        <Setter Property="BorderBrush" Value="{StaticResource Brush.Border}" />
+        <Setter Property="Background" Value="{StaticResource Brush.Surface}" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+
+    <!-- Support badges: restrained colour, only to separate the three V1 support levels. -->
+    <Style x:Key="SupportBadge" TargetType="Border">
+        <Setter Property="CornerRadius" Value="3" />
+        <Setter Property="Padding" Value="6,1" />
+        <Setter Property="HorizontalAlignment" Value="Left" />
+        <Setter Property="Background" Value="#EEF0F2" />
+        <Setter Property="TextElement.Foreground" Value="#5F6B7A" />
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding Support}" Value="EditableSync">
+                <Setter Property="Background" Value="#E6F4EA" />
+                <Setter Property="TextElement.Foreground" Value="#1E6B34" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding Support}" Value="PresentationOnly">
+                <Setter Property="Background" Value="#FFF3DC" />
+                <Setter Property="TextElement.Foreground" Value="#7A5200" />
+            </DataTrigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style x:Key="Grid.Flat" TargetType="DataGrid">
+        <Setter Property="AutoGenerateColumns" Value="False" />
+        <Setter Property="CanUserAddRows" Value="False" />
+        <Setter Property="CanUserDeleteRows" Value="False" />
+        <Setter Property="CanUserResizeRows" Value="False" />
+        <Setter Property="IsReadOnly" Value="True" />
+        <Setter Property="SelectionMode" Value="Single" />
+        <Setter Property="HeadersVisibility" Value="Column" />
+        <Setter Property="GridLinesVisibility" Value="Horizontal" />
+        <Setter Property="HorizontalGridLinesBrush" Value="#ECEEF1" />
+        <Setter Property="Background" Value="{StaticResource Brush.Surface}" />
+        <Setter Property="RowBackground" Value="{StaticResource Brush.Surface}" />
+        <Setter Property="BorderBrush" Value="{StaticResource Brush.Border}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="RowHeight" Value="28" />
+        <Setter Property="EnableRowVirtualization" Value="True" />
+        <Setter Property="VirtualizingPanel.IsVirtualizing" Value="True" />
+        <Setter Property="VirtualizingPanel.VirtualizationMode" Value="Recycling" />
+    </Style>
+
+    <Style x:Key="Grid.Header" TargetType="DataGridColumnHeader">
+        <Setter Property="Background" Value="#F7F8FA" />
+        <Setter Property="Foreground" Value="{StaticResource Brush.TextMuted}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Padding" Value="8,6" />
+        <Setter Property="BorderBrush" Value="{StaticResource Brush.Border}" />
+        <Setter Property="BorderThickness" Value="0,0,0,1" />
+    </Style>
+
+    <Style x:Key="Grid.Cell" TargetType="DataGridCell">
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Padding" Value="8,0" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="DataGridCell">
+                    <Border Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}">
+                        <ContentPresenter VerticalAlignment="Center" />
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+        <Style.Triggers>
+            <Trigger Property="IsSelected" Value="True">
+                <Setter Property="Background" Value="{StaticResource Brush.AccentSoft}" />
+                <Setter Property="Foreground" Value="{StaticResource Brush.Text}" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
 </ResourceDictionary>

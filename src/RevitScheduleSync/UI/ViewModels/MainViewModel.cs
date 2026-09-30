@@ -12,15 +12,21 @@ namespace RevitScheduleSync.UI.ViewModels
     public sealed class MainViewModel : ViewModelBase
     {
         private readonly ILogger _logger;
-        private WorkflowSectionViewModel _selectedSection;
+        private SectionViewModel _selectedSection;
 
-        public MainViewModel(SessionInfo session, ILogger logger)
+        public MainViewModel(SessionInfo session, ScheduleScanResult scheduleScan, ILogger logger)
         {
             Session = session;
             _logger = logger;
 
-            Sections = WorkflowSectionViewModel.CreatePhase0Sections();
-            _selectedSection = Sections[0];
+            Export = new ExportViewModel(scheduleScan, logger, ReportError);
+            Sections =
+            [
+                Export,
+                WorkflowSectionViewModel.CreateImport(),
+                WorkflowSectionViewModel.CreateHistory()
+            ];
+            _selectedSection = Export;
 
             OpenLogFolderCommand = new RelayCommand(
                 OpenLogFolder,
@@ -36,9 +42,11 @@ namespace RevitScheduleSync.UI.ViewModels
 
         public SessionInfo Session { get; }
 
-        public IReadOnlyList<WorkflowSectionViewModel> Sections { get; }
+        public ExportViewModel Export { get; }
 
-        public WorkflowSectionViewModel SelectedSection
+        public IReadOnlyList<SectionViewModel> Sections { get; }
+
+        public SectionViewModel SelectedSection
         {
             get => _selectedSection;
             set

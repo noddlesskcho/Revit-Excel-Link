@@ -3,21 +3,18 @@ using System.Collections.Generic;
 namespace RevitScheduleSync.UI.ViewModels
 {
     /// <summary>
-    /// One top-level area of the window (Export / Import / History).
-    /// Phase 0: describes the planned workflow steps only. Later phases replace
-    /// each section with a dedicated view model and view.
+    /// Placeholder section that describes a planned workflow.
+    /// Replaced by a dedicated view model when its phase is implemented.
     /// </summary>
-    public class WorkflowSectionViewModel : ViewModelBase
+    public sealed class WorkflowSectionViewModel : SectionViewModel
     {
         public WorkflowSectionViewModel(string title, string description, IReadOnlyList<string> steps, string availability)
+            : base(title)
         {
-            Title = title;
             Description = description;
             Steps = steps;
             Availability = availability;
         }
-
-        public string Title { get; }
 
         public string Description { get; }
 
@@ -25,23 +22,16 @@ namespace RevitScheduleSync.UI.ViewModels
 
         public string Availability { get; }
 
-        public static IReadOnlyList<WorkflowSectionViewModel> CreatePhase0Sections() =>
-        [
-            new WorkflowSectionViewModel(
-                "Export",
-                "Select schedules from this project and export them to an Excel workbook for editing.",
-                ["Select Schedules", "Analyse", "Export"],
-                "Schedule browser arrives in Phase 1."),
-            new WorkflowSectionViewModel(
-                "Import",
-                "Load an edited workbook, review every change against the current model, then apply only what you approve.",
-                ["Select Workbook", "Analyse", "Compare", "Validate", "Apply", "Report"],
-                "Import workflow arrives in Phase 5."),
-            new WorkflowSectionViewModel(
-                "History",
-                "Reports of previous imports into this project.",
-                ["Import Reports"],
-                "Import history arrives with the import report (Phase 7).")
-        ];
+        public static WorkflowSectionViewModel CreateImport() => new(
+            "Import",
+            "Load an edited workbook, review every change against the current model, then apply only what you approve.",
+            ["Select Workbook", "Analyse", "Compare", "Validate", "Apply", "Report"],
+            "Import workflow arrives in Phase 5.");
+
+        public static WorkflowSectionViewModel CreateHistory() => new(
+            "History",
+            "Reports of previous imports into this project.",
+            ["Import Reports"],
+            "Import history arrives with the import report (Phase 7).");
     }
 }

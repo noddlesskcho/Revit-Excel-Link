@@ -51,36 +51,42 @@ namespace RevitScheduleSync.Excel
                 header.CreateComment().AddText(BuildHeaderComment(column));
                 StyleHeader(header, column);
 
-                for (int r = 0; r < sheet.Rows.Count; r++)
+                if (sheet.Rows.Count > 0)
                 {
-                    var cell = sheet.Rows[r].Cells[c];
-                    var target = ws.Cell(WorkbookSchema.FirstDataRow + r, excelColumn);
-                    target.Value = cell.Value switch
+                    // Style the whole column once (per-cell styling is slow on large sheets),
+                    // then restyle only the exceptions: locked cells inside an editable column.
+                    var data = ws.Range(WorkbookSchema.FirstDataRow, excelColumn, lastRow, excelColumn);
+                    if (column.IsEditable)
                     {
-                        double d => d,
-                        string s => s,
-                        _ => Blank.Value
-                    };
-
-                    bool cellEditable = column.IsEditable && cell.IsAvailable && !cell.ForceReadOnly;
-                    if (cellEditable)
-                    {
-                        target.Style.Protection.Locked = false;
+                        data.Style.Protection.Locked = false;
                         if (column.Field.IsTypeParameter)
                         {
-                            target.Style.Fill.BackgroundColor = CellType;
+                            data.Style.Fill.BackgroundColor = CellType;
                         }
                     }
                     else
                     {
-                        target.Style.Fill.BackgroundColor = CellReadOnly;
-                        target.Style.Font.FontColor = TextReadOnly;
+                        StyleReadOnly(data.Style);
                     }
-                }
 
-                if (sheet.Rows.Count > 0)
-                {
-                    var data = ws.Range(WorkbookSchema.FirstDataRow, excelColumn, lastRow, excelColumn);
+                    for (int r = 0; r < sheet.Rows.Count; r++)
+                    {
+                        var cell = sheet.Rows[r].Cells[c];
+                        var target = ws.Cell(WorkbookSchema.FirstDataRow + r, excelColumn);
+                        target.Value = cell.Value switch
+                        {
+                            double d => d,
+                            string s => s,
+                            _ => Blank.Value
+                        };
+
+                        if (column.IsEditable && (!cell.IsAvailable || cell.ForceReadOnly))
+                        {
+                            target.Style.Protection.Locked = true;
+                            StyleReadOnly(target.Style);
+                        }
+                    }
+
                     if (column.NumberFormat != null)
                     {
                         data.Style.NumberFormat.Format = column.NumberFormat;
@@ -168,6 +174,12 @@ namespace RevitScheduleSync.Excel
                     .AllowElement(XLSheetProtectionElements.FormatColumns)
                     .AllowElement(XLSheetProtectionElements.FormatRows);
             }
+        }
+
+        private static void StyleReadOnly(IXLStyle style)
+        {
+            style.Fill.BackgroundColor = CellReadOnly;
+            style.Font.FontColor = TextReadOnly;
         }
 
         private static void WriteTitle(IXLWorksheet ws, ExportSheet sheet, string? subtitle)

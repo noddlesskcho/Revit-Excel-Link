@@ -407,8 +407,7 @@ namespace RevitScheduleSync.Excel
                 {
                     metadata.Values.Add(new ValueInfo(
                         row.Get("SheetName"), row.Get("ElementUniqueId"), Int(row.Get("FieldId")),
-                        new OriginalValue(row.Get("HasValue") == "true", row.Get("Raw"), row.Get("Normalised"),
-                            row.Get("Display"), NullIfEmpty(row.Get("LockReason")))));
+                        OriginalFrom(row)));
                 }
 
                 return metadata;
@@ -456,6 +455,23 @@ namespace RevitScheduleSync.Excel
                 sections.TryGetValue(name, out var rows)
                     ? rows
                     : throw new ScheduleSyncException($"The workbook's metadata is incomplete (no {name} section). Export a new workbook.");
+
+            /// <summary>
+            /// Accepts both value row forms: full ("true"/"false", all columns filled) and compact
+            /// (HasValue written only when false; Raw/Display empty when equal to Normalised).
+            /// </summary>
+            private static OriginalValue OriginalFrom(SectionRow row)
+            {
+                var normalised = row.Get("Normalised");
+                var raw = row.Get("Raw");
+                var display = row.Get("Display");
+                return new OriginalValue(
+                    row.Get("HasValue") != "false",
+                    raw.Length == 0 ? normalised : raw,
+                    normalised,
+                    display.Length == 0 ? normalised : display,
+                    NullIfEmpty(row.Get("LockReason")));
+            }
 
             private static int Int(string text) => int.Parse(text, NumberStyles.Integer, CultureInfo.InvariantCulture);
 

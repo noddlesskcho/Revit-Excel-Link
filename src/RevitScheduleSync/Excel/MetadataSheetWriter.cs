@@ -13,6 +13,10 @@ namespace RevitScheduleSync.Excel
     {
         public static void Write(IXLWorksheet ws, ExportWorkbook workbook, IReadOnlyList<string> sheetNames)
         {
+            // Text format everywhere so Excel keeps ids and numbers exactly as written if someone opens it.
+            // Set before filling: applying a sheet style after hundreds of thousands of cells is slow.
+            ws.Style.NumberFormat.Format = "@";
+
             int row = 1;
             var info = workbook.Info;
             var fp = info.Fingerprint;
@@ -103,10 +107,15 @@ namespace RevitScheduleSync.Excel
                             continue;
                         }
 
+                        // Compact form (large schedules): HasValue only when false; Raw and Display only when
+                        // they differ from Normalised. The reader falls back to Normalised when they are empty.
                         values.Add(
                         [
                             name, exportRow.ElementUniqueId, Text(sheet.Columns[c].Field.FieldId),
-                            cell.HasValue ? "true" : "false", cell.Raw, cell.Normalised, cell.Display,
+                            cell.HasValue ? string.Empty : "false",
+                            cell.Raw == cell.Normalised ? string.Empty : cell.Raw,
+                            cell.Normalised,
+                            cell.Display == cell.Normalised ? string.Empty : cell.Display,
                             cell.ForceReadOnly ? cell.LockReason ?? "locked" : string.Empty
                         ]);
                     }
@@ -117,9 +126,6 @@ namespace RevitScheduleSync.Excel
             row = Section(ws, row, WorkbookSchema.SectionColumns, WorkbookSchema.ColumnsHeader, columns);
             row = Section(ws, row, WorkbookSchema.SectionRows, WorkbookSchema.RowsHeader, rows);
             Section(ws, row, WorkbookSchema.SectionValues, WorkbookSchema.ValuesHeader, values);
-
-            // Text format everywhere so Excel keeps ids and numbers exactly as written if someone opens it.
-            ws.Style.NumberFormat.Format = "@";
         }
 
         /// <summary>Marker row, header row, data rows, then one empty row. Returns the next free row.</summary>

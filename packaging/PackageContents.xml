@@ -20,7 +20,14 @@
                     UpgradeCode="{FBB76A76-F19C-4D34-A639-12D06EF166CE}"
                     SupportedLocales="Enu">
   <CompanyDetails Name="[Publisher name]" Url="[Support URL]" Email="[Support email]" />
-  <RuntimeRequirements OS="Win64" Platform="Revit" SeriesMin="R2026" SeriesMax="R2026" />
+  <RuntimeRequirements OS="Win64" Platform="Revit" SeriesMin="R2025" SeriesMax="R2026" />
+  <Components Description="Revit 2025">
+    <RuntimeRequirements OS="Win64" Platform="Revit" SeriesMin="R2025" SeriesMax="R2025" />
+    <ComponentEntry AppName="Schedule Sync for Revit"
+                    Version="$VERSION$"
+                    AppDescription="Schedule to Excel export and reviewed import for Revit 2025."
+                    ModuleName=".\Contents\2025\ScheduleSync.addin" />
+  </Components>
   <Components Description="Revit 2026">
     <RuntimeRequirements OS="Win64" Platform="Revit" SeriesMin="R2026" SeriesMax="R2026" />
     <ComponentEntry AppName="Schedule Sync for Revit"

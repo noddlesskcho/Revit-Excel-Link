@@ -11,6 +11,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{0AB3BF05
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RevitScheduleSync.Tests", "tests\RevitScheduleSync.Tests\RevitScheduleSync.Tests.csproj", "{6B6B142E-BC5A-4637-B41E-22E51C038AF8}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RevitScheduleSync.Loader", "src\RevitScheduleSync.Loader\RevitScheduleSync.Loader.csproj", "{5439B4D3-B1DF-479F-88EC-B67ECE7BA680}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -45,6 +47,18 @@ Global
 		{6B6B142E-BC5A-4637-B41E-22E51C038AF8}.Release|x64.Build.0 = Release|x64
 		{6B6B142E-BC5A-4637-B41E-22E51C038AF8}.Release|x86.ActiveCfg = Release|x64
 		{6B6B142E-BC5A-4637-B41E-22E51C038AF8}.Release|x86.Build.0 = Release|x64
+		{5439B4D3-B1DF-479F-88EC-B67ECE7BA680}.Debug|Any CPU.ActiveCfg = Debug|x64
+		{5439B4D3-B1DF-479F-88EC-B67ECE7BA680}.Debug|Any CPU.Build.0 = Debug|x64
+		{5439B4D3-B1DF-479F-88EC-B67ECE7BA680}.Debug|x64.ActiveCfg = Debug|x64
+		{5439B4D3-B1DF-479F-88EC-B67ECE7BA680}.Debug|x64.Build.0 = Debug|x64
+		{5439B4D3-B1DF-479F-88EC-B67ECE7BA680}.Debug|x86.ActiveCfg = Debug|x64
+		{5439B4D3-B1DF-479F-88EC-B67ECE7BA680}.Debug|x86.Build.0 = Debug|x64
+		{5439B4D3-B1DF-479F-88EC-B67ECE7BA680}.Release|Any CPU.ActiveCfg = Release|x64
+		{5439B4D3-B1DF-479F-88EC-B67ECE7BA680}.Release|Any CPU.Build.0 = Release|x64
+		{5439B4D3-B1DF-479F-88EC-B67ECE7BA680}.Release|x64.ActiveCfg = Release|x64
+		{5439B4D3-B1DF-479F-88EC-B67ECE7BA680}.Release|x64.Build.0 = Release|x64
+		{5439B4D3-B1DF-479F-88EC-B67ECE7BA680}.Release|x86.ActiveCfg = Release|x64
+		{5439B4D3-B1DF-479F-88EC-B67ECE7BA680}.Release|x86.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -52,5 +66,6 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{E34504EB-7F56-438A-BE3A-E4F432B5AEF1} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{6B6B142E-BC5A-4637-B41E-22E51C038AF8} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
+		{5439B4D3-B1DF-479F-88EC-B67ECE7BA680} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 	EndGlobalSection
 EndGlobal

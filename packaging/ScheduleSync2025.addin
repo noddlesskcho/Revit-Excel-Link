@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Revit 2025 add-in manifest inside the App Store bundle (Contents\2025\).
+     Revit 2025 has no add-in isolation, so Revit loads the small loader, which loads core\RevitScheduleSync.dll
+     and ClosedXML into a private load context. Same AddInId as the development manifests: do not install both. -->
+<RevitAddIns>
+  <AddIn Type="Application">
+    <Name>Schedule Sync for Revit</Name>
+    <Assembly>RevitScheduleSync.Loader.dll</Assembly>
+    <AddInId>5afc7788-f203-4ec5-bf1b-d05b2042fe37</AddInId>
+    <FullClassName>RevitScheduleSync.Loader.LoaderApplication</FullClassName>
+    <VendorId>RSSY</VendorId>
+    <VendorDescription>Schedule Sync for Revit - safe schedule to Excel synchronisation</VendorDescription>
+  </AddIn>
+</RevitAddIns>

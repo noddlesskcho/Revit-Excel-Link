@@ -1,12 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!--
-    Revit Schedule Sync - Revit 2026.5 add-in.
-    Revit 2026.5 hosts the .NET 10 runtime (see RevitAPI.runtimeconfig.json in the Revit install folder),
-    so the add-in targets net10.0-windows, x64 only.
+    Schedule Sync for Revit - add-in core, built once per supported Revit version:
+      net10.0-windows -> Revit 2026 (Revit 2026.5 hosts .NET 10; loaded directly, isolated by Revit via UseRevitContext=False)
+      net8.0-windows  -> Revit 2025 (Revit 2025 hosts .NET 8; loaded through RevitScheduleSync.Loader into a private
+                         AssemblyLoadContext, because Revit 2025 has no add-in isolation)
+    x64 only.
   -->
   <PropertyGroup>
-    <TargetFramework>net10.0-windows</TargetFramework>
+    <TargetFrameworks>net8.0-windows;net10.0-windows</TargetFrameworks>
     <UseWPF>true</UseWPF>
     <PlatformTarget>x64</PlatformTarget>
     <Platforms>x64</Platforms>
@@ -21,10 +23,9 @@
     <Company>Schedule Sync for Revit</Company>
 
     <!-- Plugin-style output: copy NuGet dependencies next to the add-in DLL and emit a .deps.json
-         so Revit's isolated add-in load context can resolve ClosedXML and its dependencies. -->
+         so the add-in load context (Revit 2026, or our loader in 2025) can resolve ClosedXML and its dependencies. -->
     <EnableDynamicLoading>true</EnableDynamicLoading>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
-    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
 
     <!-- MSB3277: Revit's own internal assemblies (pulled in through RevitAPIUI.dll) reference older
@@ -32,13 +33,24 @@
          they are never copied, so the version conflict is harmless for this add-in. -->
     <MSBuildWarningsAsMessages>$(MSBuildWarningsAsMessages);MSB3277</MSBuildWarningsAsMessages>
 
-    <RevitVersion>2026</RevitVersion>
-    <RevitInstallDir Condition="'$(RevitInstallDir)' == ''">C:\Program Files\Autodesk\Revit $(RevitVersion)\</RevitInstallDir>
-    <RevitAddinsDir>$(APPDATA)\Autodesk\Revit\Addins\$(RevitVersion)\</RevitAddinsDir>
-
     <!-- Copy the build output into the per-user Revit add-ins folder after each Debug build.
          Disable with: dotnet build -p:DeployToRevit=false -->
     <DeployToRevit Condition="'$(DeployToRevit)' == '' and '$(Configuration)' == 'Debug'">true</DeployToRevit>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net8.0-windows'">
+    <RevitVersion>2025</RevitVersion>
+    <DefineConstants>$(DefineConstants);REVIT2025</DefineConstants>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net10.0-windows'">
+    <RevitVersion>2026</RevitVersion>
+    <DefineConstants>$(DefineConstants);REVIT2026</DefineConstants>
+  </PropertyGroup>
+  <PropertyGroup>
+    <RevitInstallDir>C:\Program Files\Autodesk\Revit $(RevitVersion)\</RevitInstallDir>
+    <RevitInstallDir Condition="'$(RevitInstallDir2025)' != '' and '$(RevitVersion)' == '2025'">$(RevitInstallDir2025)</RevitInstallDir>
+    <RevitInstallDir Condition="'$(RevitInstallDir2026)' != '' and '$(RevitVersion)' == '2026'">$(RevitInstallDir2026)</RevitInstallDir>
+    <RevitAddinsDir>$(APPDATA)\Autodesk\Revit\Addins\$(RevitVersion)\</RevitAddinsDir>
   </PropertyGroup>
 
   <ItemGroup>
@@ -57,44 +69,58 @@
     <PackageReference Include="ClosedXML" Version="0.105.1" />
   </ItemGroup>
 
-  <ItemGroup>
+  <!-- Development manifest, Revit 2026 only (Revit 2025 uses the loader's manifest). -->
+  <ItemGroup Condition="'$(RevitVersion)' == '2026'">
     <None Update="RevitScheduleSync.addin">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
+  <ItemGroup Condition="'$(RevitVersion)' != '2026'">
+    <None Remove="RevitScheduleSync.addin" />
+  </ItemGroup>
 
-  <Target Name="CheckRevitInstall" BeforeTargets="ResolveAssemblyReferences">
+  <Target Name="CheckRevitInstall" BeforeTargets="ResolveAssemblyReferences" Condition="'$(TargetFramework)' != ''">
     <Error Condition="!Exists('$(RevitInstallDir)RevitAPI.dll')"
-           Text="RevitAPI.dll not found in '$(RevitInstallDir)'. Install Revit $(RevitVersion) or pass -p:RevitInstallDir=&lt;folder&gt;\" />
+           Text="RevitAPI.dll not found in '$(RevitInstallDir)'. Install Revit $(RevitVersion) or pass -p:RevitInstallDir$(RevitVersion)=&lt;folder&gt;\" />
   </Target>
 
   <!--
     Deploy layout:
-      %APPDATA%\Autodesk\Revit\Addins\2026\RevitScheduleSync.addin
-      %APPDATA%\Autodesk\Revit\Addins\2026\RevitScheduleSync\RevitScheduleSync.dll (+ dependencies)
+      Revit 2026: Addins\2026\RevitScheduleSync.addin + Addins\2026\RevitScheduleSync\RevitScheduleSync.dll (+ dependencies)
+      Revit 2025: Addins\2025\RevitScheduleSync\core\RevitScheduleSync.dll (+ dependencies);
+                  the manifest and loader DLL are deployed by RevitScheduleSync.Loader.
     Fails with a warning (not an error) when Revit is running and holds the DLL open.
   -->
-  <Target Name="DeployToRevitAddins" AfterTargets="Build" Condition="'$(DeployToRevit)' == 'true'">
+  <Target Name="DeployToRevitAddins" AfterTargets="Build" Condition="'$(DeployToRevit)' == 'true' and '$(TargetFramework)' != ''">
+    <PropertyGroup>
+      <_DeployFolder Condition="'$(RevitVersion)' == '2026'">$(RevitAddinsDir)RevitScheduleSync\</_DeployFolder>
+      <_DeployFolder Condition="'$(RevitVersion)' == '2025'">$(RevitAddinsDir)RevitScheduleSync\core\</_DeployFolder>
+    </PropertyGroup>
     <ItemGroup>
       <_DeployFiles Include="$(OutDir)**\*" Exclude="$(OutDir)**\*.addin;$(OutDir)**\*.pdb.tmp" />
     </ItemGroup>
     <Copy SourceFiles="@(_DeployFiles)"
-          DestinationFolder="$(RevitAddinsDir)RevitScheduleSync\%(RecursiveDir)"
+          DestinationFolder="$(_DeployFolder)%(RecursiveDir)"
           SkipUnchangedFiles="true"
           Retries="0"
           ContinueOnError="WarnAndContinue" />
     <PropertyGroup>
       <_DeployFilesOk>$(MSBuildLastTaskResult)</_DeployFilesOk>
+      <_DeployManifestOk>true</_DeployManifestOk>
     </PropertyGroup>
-    <Copy SourceFiles="$(OutDir)RevitScheduleSync.addin"
+    <Copy Condition="'$(RevitVersion)' == '2026'"
+          SourceFiles="$(OutDir)RevitScheduleSync.addin"
           DestinationFolder="$(RevitAddinsDir)"
           SkipUnchangedFiles="true"
           Retries="0"
           ContinueOnError="WarnAndContinue" />
-    <Message Condition="'$(_DeployFilesOk)' == 'true' and '$(MSBuildLastTaskResult)' == 'true'"
-             Importance="high" Text="Deployed Revit Schedule Sync to $(RevitAddinsDir)" />
-    <Warning Condition="'$(_DeployFilesOk)' != 'true' or '$(MSBuildLastTaskResult)' != 'true'"
-             Text="Revit Schedule Sync was NOT deployed: the add-in files are in use (is Revit running?). Close Revit and build again." />
+    <PropertyGroup Condition="'$(RevitVersion)' == '2026'">
+      <_DeployManifestOk>$(MSBuildLastTaskResult)</_DeployManifestOk>
+    </PropertyGroup>
+    <Message Condition="'$(_DeployFilesOk)' == 'true' and '$(_DeployManifestOk)' == 'true'"
+             Importance="high" Text="Deployed Schedule Sync for Revit $(RevitVersion) to $(_DeployFolder)" />
+    <Warning Condition="'$(_DeployFilesOk)' != 'true' or '$(_DeployManifestOk)' != 'true'"
+             Text="Schedule Sync for Revit $(RevitVersion) was NOT deployed: the add-in files are in use (is Revit running?). Close Revit and build again." />
   </Target>
 
 </Project>

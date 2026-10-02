@@ -1,0 +1,70 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Revit 2025 entry point. Revit 2025 loads every add-in into one shared .NET load context, so ClosedXML's
+    DocumentFormat.OpenXml 3.x could clash with other add-ins (Dynamo for Revit 2025 ships OpenXml 2.12).
+    This tiny loader has no third-party dependencies: it loads the real add-in (core\RevitScheduleSync.dll)
+    and its dependencies into a private AssemblyLoadContext and forwards Revit's calls to it.
+    It must never reference RevitScheduleSync.dll directly (that would load a second copy into Revit's context).
+  -->
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <PlatformTarget>x64</PlatformTarget>
+    <Platforms>x64</Platforms>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <RootNamespace>RevitScheduleSync.Loader</RootNamespace>
+    <AssemblyName>RevitScheduleSync.Loader</AssemblyName>
+    <Version>1.0.0</Version>
+    <Product>Schedule Sync for Revit</Product>
+    <Company>Schedule Sync for Revit</Company>
+    <MSBuildWarningsAsMessages>$(MSBuildWarningsAsMessages);MSB3277</MSBuildWarningsAsMessages>
+    <GenerateDependencyFile>false</GenerateDependencyFile>
+
+    <RevitInstallDir>C:\Program Files\Autodesk\Revit 2025\</RevitInstallDir>
+    <RevitInstallDir Condition="'$(RevitInstallDir2025)' != ''">$(RevitInstallDir2025)</RevitInstallDir>
+    <RevitAddinsDir>$(APPDATA)\Autodesk\Revit\Addins\2025\</RevitAddinsDir>
+    <DeployToRevit Condition="'$(DeployToRevit)' == '' and '$(Configuration)' == 'Debug'">true</DeployToRevit>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="RevitAPI">
+      <HintPath>$(RevitInstallDir)RevitAPI.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="RevitAPIUI">
+      <HintPath>$(RevitInstallDir)RevitAPIUI.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="RevitScheduleSync.addin">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <!--
+    Deploy layout (Revit 2025):
+      Addins\2025\RevitScheduleSync.addin
+      Addins\2025\RevitScheduleSync\RevitScheduleSync.Loader.dll
+      Addins\2025\RevitScheduleSync\core\...   (deployed by RevitScheduleSync.csproj, net8.0-windows)
+  -->
+  <Target Name="DeployToRevitAddins" AfterTargets="Build" Condition="'$(DeployToRevit)' == 'true'">
+    <Copy SourceFiles="$(OutDir)RevitScheduleSync.Loader.dll;$(OutDir)RevitScheduleSync.Loader.pdb"
+          DestinationFolder="$(RevitAddinsDir)RevitScheduleSync\"
+          SkipUnchangedFiles="true" Retries="0" ContinueOnError="WarnAndContinue" />
+    <PropertyGroup>
+      <_LoaderOk>$(MSBuildLastTaskResult)</_LoaderOk>
+    </PropertyGroup>
+    <Copy SourceFiles="$(OutDir)RevitScheduleSync.addin"
+          DestinationFolder="$(RevitAddinsDir)"
+          SkipUnchangedFiles="true" Retries="0" ContinueOnError="WarnAndContinue" />
+    <Message Condition="'$(_LoaderOk)' == 'true' and '$(MSBuildLastTaskResult)' == 'true'"
+             Importance="high" Text="Deployed Schedule Sync for Revit 2025 loader to $(RevitAddinsDir)" />
+    <Warning Condition="'$(_LoaderOk)' != 'true' or '$(MSBuildLastTaskResult)' != 'true'"
+             Text="Schedule Sync for Revit 2025 loader was NOT deployed: files in use (is Revit 2025 running?). Close Revit and build again." />
+  </Target>
+
+</Project>

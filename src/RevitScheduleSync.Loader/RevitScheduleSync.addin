@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Revit 2025 development manifest. Relative to this file: %APPDATA%\Autodesk\Revit\Addins\2025\RevitScheduleSync\ -->
+<RevitAddIns>
+  <AddIn Type="Application">
+    <Name>Schedule Sync for Revit</Name>
+    <Assembly>RevitScheduleSync\RevitScheduleSync.Loader.dll</Assembly>
+    <AddInId>5afc7788-f203-4ec5-bf1b-d05b2042fe37</AddInId>
+    <FullClassName>RevitScheduleSync.Loader.LoaderApplication</FullClassName>
+    <VendorId>RSSY</VendorId>
+    <VendorDescription>Schedule Sync for Revit - safe schedule to Excel synchronisation</VendorDescription>
+  </AddIn>
+</RevitAddIns>

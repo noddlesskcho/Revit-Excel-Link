@@ -2,7 +2,7 @@
 
 Repository and assembly name: `RevitScheduleSync`.
 
-Revit 2026 add-in for safe, auditable schedule ↔ Excel synchronisation: export schedules to .xlsx,
+Revit 2025 / 2026 add-in for safe, auditable schedule ↔ Excel synchronisation: export schedules to .xlsx,
 edit values in Excel, then analyse, review and apply the changes back to the model.
 
 Status: **V1 (1.0.0)** — export, import analysis (three-way comparison), review, apply (one Undo step),
@@ -10,7 +10,9 @@ report and history. See [docs/V1-checklist.md](docs/V1-checklist.md).
 
 ## Requirements
 
-- Revit 2026.5 (hosts the .NET 10 runtime), Windows 64-bit
+- Revit 2026.5 (.NET 10) and/or Revit 2025 (.NET 8), Windows 64-bit. The core is built for both;
+  Revit 2025 loads it through `RevitScheduleSync.Loader`, which isolates ClosedXML in a private load context
+  (Revit 2025 has no add-in isolation; Dynamo for Revit 2025 ships an older DocumentFormat.OpenXml).
 - .NET 10 SDK (10.0.401 or later) to build
 - Microsoft Excel is **not** required
 
@@ -20,7 +22,7 @@ report and history. See [docs/V1-checklist.md](docs/V1-checklist.md).
 dotnet build RevitScheduleSync.sln -c Debug
 ```
 
-A Debug build copies the add-in to `%APPDATA%\Autodesk\Revit\Addins\2026\` (close Revit first; the build
+A Debug build copies the add-in to `%APPDATA%\Autodesk\Revit\Addins\2025\` and `\2026\` (close Revit first; the build
 warns "NOT deployed" if Revit holds the files). Skip with `-p:DeployToRevit=false`.
 
 ## Tests
@@ -54,6 +56,7 @@ src/RevitScheduleSync/
 ├── Sync/            pure comparison logic (three-way, fingerprint)
 ├── Services/        prompts, errors, report store, operations interface
 └── Logging/         ILogger, FileLogger
+src/RevitScheduleSync.Loader/    Revit 2025 entry point: loads the core into a private AssemblyLoadContext
 tests/RevitScheduleSync.Tests/   xUnit tests (no Revit)
 tools/IconExport/                renders the add-in icon to PNG for the package
 packaging/                       bundle manifest, add-in manifest, help, icons, build script

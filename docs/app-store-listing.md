@@ -8,7 +8,7 @@ Items marked **[YOU]** must come from you (publisher identity, contact, legal).
 | Item | Value |
 |---|---|
 | Upload file | `artifacts/ScheduleSyncForRevit-1.0.0.bundle.zip` (built by `packaging/build-package.ps1`) |
-| Format | Autodesk bundle (`PackageContents.xml`), Revit 2026, Win64 |
+| Format | Autodesk bundle (`PackageContents.xml`), Revit 2025 and 2026, Win64 |
 | Version | 1.0.0 |
 | Install location (by the store installer) | `%ProgramData%\Autodesk\ApplicationPlugins\ScheduleSyncForRevit.bundle` |
 | UpgradeCode | `{FBB76A76-F19C-4D34-A639-12D06EF166CE}` — never change it; future versions upgrade this one |
@@ -21,7 +21,7 @@ Items marked **[YOU]** must come from you (publisher identity, contact, legal).
 
 **Price:** Free *(V1 has no licensing; can be changed for a later version).*
 
-**Supported product:** Autodesk Revit 2026 · Windows 64-bit · English
+**Supported products:** Autodesk Revit 2025, Autodesk Revit 2026 · Windows 64-bit · English
 
 **Category (suggested):** Productivity; Data exchange / Import-Export *(pick the closest options the form offers).*
 
@@ -58,7 +58,7 @@ Items marked **[YOU]** must come from you (publisher identity, contact, legal).
 - Hidden fields and rows from linked models are not exported.
 - Instance values of model-group members are read-only.
 - Grouped (non-itemised) schedules: presentation export only.
-- Revit 2026 only.
+- Revit 2025 and 2026 only.
 
 **Help / documentation:** included in the package (`Contents/Resources/help.html`); the same text can be pasted into the store's documentation field.
 

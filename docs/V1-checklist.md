@@ -12,6 +12,7 @@ Status of the V1 definition of done (spec section 32) and the test cases (sectio
 | Requirement | How it is met | Verified |
 |---|---|---|
 | Plugin loads in Revit 2026.5 | Isolated add-in context (`UseRevitContext=False`), ribbon button | Confirmed (Phase 0) |
+| Plugin loads in Revit 2025 (added after V1 scope) | .NET 8 build + loader with private load context; isolation verified outside Revit with Dynamo's OpenXml 2.12.3 preloaded | **Test in Revit 2025** |
 | Select multiple itemised schedules | Schedule browser with search, select all/clear | Confirmed (Phase 1) |
 | Export to .xlsx | ClosedXML writer, temp file + replace | Automated; manual (Phase 3) |
 | Excel not required | ClosedXML only, no Office Interop/COM | By design |

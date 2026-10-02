@@ -11,23 +11,24 @@ namespace RevitScheduleSync.App
         {
             var panel = application.CreateRibbonPanel(PluginInfo.RibbonPanelName);
 
+            var entry = AddinHost.Entry;
             var buttonData = new PushButtonData(
                 PluginInfo.OpenCommandButtonName,
                 PluginInfo.OpenCommandButtonText,
-                typeof(OpenScheduleSyncCommand).Assembly.Location,
-                typeof(OpenScheduleSyncCommand).FullName)
+                entry.AssemblyPath,
+                entry.CommandClass)
             {
                 ToolTip = "Export Revit schedules to Excel and import reviewed changes back into the model.",
                 LongDescription =
                     "Every import is analysed and compared (original export / current model / Excel) " +
                     "before any change is written. Nothing is applied without review.",
-                AvailabilityClassName = typeof(ProjectDocumentAvailability).FullName,
+                AvailabilityClassName = entry.AvailabilityClass,
                 LargeImage = RibbonIcons.Create(32),
                 Image = RibbonIcons.Create(16)
             };
 
             panel.AddItem(buttonData);
-            logger.Info("Ribbon panel created.");
+            logger.Info($"Ribbon panel created (command: {entry.CommandClass}).");
         }
     }
 }

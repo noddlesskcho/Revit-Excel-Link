@@ -51,7 +51,7 @@ namespace RevitScheduleSync.Commands
                     operations,
                     () => SaveDialogs.ChooseExportPath(document),
                     new ImportDialogs(SaveDialogs.ChooseImportPath, SaveDialogs.ChooseReportPath),
-                    new TaskDialogPrompts(),
+                    new TaskDialogPrompts(logger),
                     new ReportStore(logger),
                     logger);
                 var window = new ScheduleSyncWindow(viewModel);

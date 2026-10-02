@@ -1,6 +1,6 @@
-using System;
 using Autodesk.Revit.UI;
 using RevitScheduleSync.App;
+using RevitScheduleSync.Logging;
 
 namespace RevitScheduleSync.Services
 {
@@ -14,6 +14,13 @@ namespace RevitScheduleSync.Services
     /// <summary>Revit TaskDialog confirmations. Must be called on the Revit main thread.</summary>
     internal sealed class TaskDialogPrompts : IUserPrompts
     {
+        private readonly ILogger _logger;
+
+        public TaskDialogPrompts(ILogger logger)
+        {
+            _logger = logger;
+        }
+
         public bool Confirm(string instruction, string content, string confirmText, string cancelText)
         {
             var dialog = new TaskDialog(PluginInfo.ProductName)
@@ -30,7 +37,10 @@ namespace RevitScheduleSync.Services
             // Default = cancel, so pressing Enter never writes to the model.
             dialog.DefaultButton = TaskDialogResult.CommandLink2;
 
-            return dialog.Show() == TaskDialogResult.CommandLink1;
+            var result = dialog.Show();
+            bool confirmed = result == TaskDialogResult.CommandLink1;
+            _logger.Info($"Prompt '{instruction}': {(confirmed ? "confirmed" : "cancelled")} ({result}).");
+            return confirmed;
         }
     }
 }

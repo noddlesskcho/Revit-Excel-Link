@@ -21,6 +21,7 @@ namespace RevitScheduleSync.UI.ViewModels
     {
         private readonly List<ChangeRowViewModel> _rows;
         private readonly IUserPrompts _prompts;
+        private readonly Action<string, Exception> _reportError;
         private ReviewFilter _selectedFilter;
         private ScheduleTab _selectedTab;
         private ChangeRowViewModel? _selectedRow;
@@ -31,6 +32,7 @@ namespace RevitScheduleSync.UI.ViewModels
         {
             Changes = changes;
             _prompts = prompts;
+            _reportError = reportError;
             _rows = changes.Items.Select(i => new ChangeRowViewModel(i, this)).ToList();
 
             Filters = ReviewFilter.All;
@@ -186,6 +188,30 @@ namespace RevitScheduleSync.UI.ViewModels
             }
         }
 
+        /// <summary>
+        /// Asks for type-change approval and records the decision. Runs outside the ComboBox binding update,
+        /// so failures are reported (and logged) instead of silently swallowed by WPF.
+        /// </summary>
+        internal void RequestTypeApproval(ChangeRowViewModel row, ReviewDecision decision)
+        {
+            try
+            {
+                if (ConfirmTypeChange(row.Item))
+                {
+                    row.SetDecision(decision);
+                    DecisionsChanged();
+                }
+            }
+            catch (Exception ex)
+            {
+                _reportError("The type change could not be approved.", ex);
+            }
+            finally
+            {
+                row.RefreshSelection();
+            }
+        }
+
         internal void DecisionsChanged()
         {
             OnPropertyChanged(nameof(WillWriteCount));
@@ -325,11 +351,13 @@ namespace RevitScheduleSync.UI.ViewModels
                 }
 
                 // Type values affect every instance: approval always goes through the warning dialog.
+                // The dialog is shown after the ComboBox has finished committing its selection: a modal dialog
+                // inside a binding update is fragile, and WPF silently swallows exceptions thrown here.
                 bool writesType = Item.IsType && value.Decision is ReviewDecision.Apply or ReviewDecision.UseExcel;
-                if (writesType && !_owner.ConfirmTypeChange(Item))
+                if (writesType)
                 {
-                    // Re-sync the ComboBox after WPF finishes committing the rejected selection.
-                    Dispatcher.CurrentDispatcher.BeginInvoke(() => OnPropertyChanged(nameof(SelectedAction)));
+                    var requested = value.Decision;
+                    Dispatcher.CurrentDispatcher.BeginInvoke(() => _owner.RequestTypeApproval(this, requested));
                     return;
                 }
 
@@ -337,6 +365,9 @@ namespace RevitScheduleSync.UI.ViewModels
                 _owner.DecisionsChanged();
             }
         }
+
+        /// <summary>Makes the ComboBox show the real decision again (e.g. after a cancelled approval).</summary>
+        internal void RefreshSelection() => OnPropertyChanged(nameof(SelectedAction));
 
         public ChangeStatus Status => Item.Status;
 

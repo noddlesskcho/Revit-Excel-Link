@@ -13,13 +13,30 @@ namespace RevitScheduleSync.Tests
         private sealed class Prompts : IUserPrompts
         {
             public bool Answer { get; set; }
+            public bool Throw { get; set; }
             public int Asked { get; private set; }
 
             public bool Confirm(string instruction, string content, string confirmText, string cancelText)
             {
                 Asked++;
+                if (Throw)
+                {
+                    throw new System.InvalidOperationException("dialog failed");
+                }
+
                 return Answer;
             }
+        }
+
+        /// <summary>Runs work queued on this thread's dispatcher (the type-approval dialog is deferred).</summary>
+        private static void DoEvents()
+        {
+            var frame = new System.Windows.Threading.DispatcherFrame();
+            System.Windows.Threading.Dispatcher.CurrentDispatcher.BeginInvoke(
+                System.Windows.Threading.DispatcherPriority.Background,
+                new System.Windows.Threading.DispatcherOperationCallback(f => { ((System.Windows.Threading.DispatcherFrame)f!).Continue = false; return null; }),
+                frame);
+            System.Windows.Threading.Dispatcher.PushFrame(frame);
         }
 
         private static ChangeItem Item(string sheet, ChangeStatus status, bool type = false, ReviewDecision decision = ReviewDecision.None) => new()
@@ -137,13 +154,33 @@ namespace RevitScheduleSync.Tests
             var row = review.Items.Cast<ChangeRowViewModel>().Single(r => r.Item.Status == ChangeStatus.TypeChange);
 
             row.SelectedAction = row.Actions.Single(a => a.Decision == ReviewDecision.Apply);
+            Assert.Equal(0, prompts.Asked); // never inside the ComboBox binding update
+            DoEvents();
             Assert.Equal(1, prompts.Asked);
             Assert.Equal(ReviewDecision.Pending, items[4].Decision);
+            Assert.Equal(ReviewDecision.Pending, row.SelectedAction!.Decision);
 
             prompts.Answer = true;
             row.SelectedAction = row.Actions.Single(a => a.Decision == ReviewDecision.Apply);
+            DoEvents();
             Assert.Equal(ReviewDecision.Apply, items[4].Decision);
             Assert.Equal(4, review.TotalWillWriteCount);
+        }
+
+        [Fact]
+        public void Failing_type_approval_dialog_is_reported_not_swallowed()
+        {
+            var prompts = new Prompts { Throw = true };
+            string? reported = null;
+            var review = Review(prompts, out var items);
+            review = new ChangeReviewViewModel(review.Changes, prompts, () => { }, () => { }, _ => { }, (message, _) => reported = message);
+            var row = review.Items.Cast<ChangeRowViewModel>().Single(r => r.Item.Status == ChangeStatus.TypeChange);
+
+            row.SelectedAction = row.Actions.Single(a => a.Decision == ReviewDecision.Apply);
+            DoEvents();
+
+            Assert.Equal("The type change could not be approved.", reported);
+            Assert.Equal(ReviewDecision.Pending, items[4].Decision);
         }
     }
 }

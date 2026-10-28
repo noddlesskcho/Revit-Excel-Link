@@ -16,20 +16,30 @@ namespace RevitScheduleSync.Excel
         private const double MaxColumnWidth = 50;
 
         private static readonly XLColor HeaderInstance = XLColor.FromHtml("#E6F4EA");
-        private static readonly XLColor HeaderType = XLColor.FromHtml("#DCE9F9");
-        private static readonly XLColor HeaderReadOnly = XLColor.FromHtml("#E9EBEE");
-        private static readonly XLColor CellType = XLColor.FromHtml("#F1F6FD");
-        private static readonly XLColor CellReadOnly = XLColor.FromHtml("#F5F6F8");
+        // Colour code shared with the add-in window: green instance, yellow type, red read-only, grey not on element.
+        private static readonly XLColor HeaderType = XLColor.FromHtml("#FFE8A3");
+        private static readonly XLColor HeaderReadOnly = XLColor.FromHtml("#F6C9C9");
+        private static readonly XLColor CellType = XLColor.FromHtml("#FFF6D6");
+        private static readonly XLColor CellReadOnly = XLColor.FromHtml("#FDECEC");
+        private static readonly XLColor CellUnavailable = XLColor.FromHtml("#E4E6EA");
         private static readonly XLColor TextReadOnly = XLColor.FromHtml("#6B7280");
         private static readonly XLColor Border = XLColor.FromHtml("#C9CED6");
         private static readonly XLColor Banner = XLColor.FromHtml("#FFF3DC");
 
-        public static void WriteEditable(IXLWorksheet ws, ExportSheet sheet, bool protect, ILogger logger)
+        /// <summary>Blank rows left unlocked below the data of sheets that accept new rows (rooms, spaces).</summary>
+        public const int NewRowCapacity = 500;
+
+        private static readonly XLColor CellNewRow = XLColor.FromHtml("#FBFCF4");
+
+        public static void WriteEditable(IXLWorksheet ws, ExportSheet sheet, bool protect, ListSheetWriter? lists, ILogger logger)
         {
             int lastColumn = WorkbookSchema.FirstFieldColumn + sheet.Columns.Count - 1;
             int lastRow = WorkbookSchema.FirstDataRow + sheet.Rows.Count - 1;
 
-            WriteTitle(ws, sheet, "ITEMISED — editable sync supported. Edit white (instance) and blue (type) cells.");
+            // Rows added below the data create new elements; validations and unlocked cells extend over them.
+            int lastInputRow = sheet.AllowNewRows ? lastRow + NewRowCapacity : lastRow;
+
+            WriteTitle(ws, sheet, Subtitle(sheet));
             WriteLegend(ws);
 
             // Identity column: hidden and locked. Survives sorting and filtering, unlike row numbers.
@@ -80,7 +90,13 @@ namespace RevitScheduleSync.Excel
                             _ => Blank.Value
                         };
 
-                        if (column.IsEditable && (!cell.IsAvailable || cell.ForceReadOnly))
+                        if (!cell.IsAvailable)
+                        {
+                            // The element has no such parameter.
+                            target.Style.Protection.Locked = true;
+                            target.Style.Fill.BackgroundColor = CellUnavailable;
+                        }
+                        else if (column.IsEditable && cell.ForceReadOnly)
                         {
                             target.Style.Protection.Locked = true;
                             StyleReadOnly(target.Style);
@@ -99,8 +115,25 @@ namespace RevitScheduleSync.Excel
 
                     if (column.IsEditable)
                     {
-                        AddValidation(data, column);
+                        AddValidation(data, column, lists);
                     }
+                }
+
+                if (sheet.AllowNewRows && column.IsEditable)
+                {
+                    var input = ws.Range(lastRow + 1, excelColumn, lastInputRow, excelColumn);
+                    input.Style.Protection.Locked = false;
+                    input.Style.Fill.BackgroundColor = CellNewRow;
+                    if (column.NumberFormat != null)
+                    {
+                        input.Style.NumberFormat.Format = column.NumberFormat;
+                    }
+                    else if (column.Kind is CellKind.Text or CellKind.Reference or CellKind.YesNo)
+                    {
+                        input.Style.NumberFormat.Format = "@";
+                    }
+
+                    AddValidation(input, column, lists);
                 }
             }
 
@@ -176,6 +209,16 @@ namespace RevitScheduleSync.Excel
             }
         }
 
+        private static string Subtitle(ExportSheet sheet) => sheet.Source switch
+        {
+            SheetSource.Schedule => "ITEMISED — editable sync supported. Edit white (instance) and yellow (type) cells.",
+            SheetSource.Rooms or SheetSource.Spaces =>
+                "Edit white cells. Add rows below the data to create new unplaced elements (Number, Name and Phase required).",
+            SheetSource.CategoryTypes => "One row per type. Edit white cells; a change applies to every instance of the type.",
+            SheetSource.ObjectStyles or SheetSource.LineStyles => "Edit white cells. Colour as R,G,B (e.g. 255,0,0).",
+            _ => "Edit white (instance) and yellow (type) cells. Red cells are read-only; grey cells have no such parameter."
+        };
+
         private static void StyleReadOnly(IXLStyle style)
         {
             style.Fill.BackgroundColor = CellReadOnly;
@@ -203,6 +246,7 @@ namespace RevitScheduleSync.Excel
             Legend(ws.Cell(WorkbookSchema.LegendRow, c), "Editable", XLColor.White);
             Legend(ws.Cell(WorkbookSchema.LegendRow, c + 1), "Editable (type)", CellType);
             Legend(ws.Cell(WorkbookSchema.LegendRow, c + 2), "Read-only", CellReadOnly);
+            Legend(ws.Cell(WorkbookSchema.LegendRow, c + 3), "No parameter", CellUnavailable);
             ws.Cell(WorkbookSchema.LegendRow, c + 1).CreateComment()
                 .AddText("Type parameter: one change applies to every element of that type.");
         }
@@ -263,15 +307,35 @@ namespace RevitScheduleSync.Excel
 
             if (column.Kind == CellKind.Reference && column.IsEditable)
             {
-                text.AppendLine("Type the exact name of an existing element.");
+                text.AppendLine(column.ListValues is { Count: > 0 }
+                    ? "Pick a value from the drop-down list."
+                    : "Type the exact name of an existing element.");
+            }
+
+            if (column.RequiredForNewRows)
+            {
+                text.AppendLine("Required for new rows.");
             }
 
             return text.ToString().TrimEnd();
         }
 
-        private static void AddValidation(IXLRange data, ExportColumn column)
+        private static void AddValidation(IXLRange data, ExportColumn column, ListSheetWriter? lists)
         {
             IXLDataValidation? validation = null;
+            var listRange = column.ListValues is { Count: > 0 } && lists != null ? lists.RangeFor(column.ListValues) : null;
+            if (listRange != null)
+            {
+                validation = data.CreateDataValidation();
+                validation.List("=" + listRange, true);
+                validation.ErrorMessage = "Pick a value from the list, or leave the cell empty.";
+                validation.IgnoreBlanks = true;
+                validation.ShowErrorMessage = true;
+                validation.ErrorStyle = XLErrorStyle.Stop;
+                validation.ErrorTitle = "Revit-Excel Link";
+                return;
+            }
+
             switch (column.Kind)
             {
                 case CellKind.YesNo:
@@ -298,7 +362,7 @@ namespace RevitScheduleSync.Excel
                 validation.IgnoreBlanks = true;
                 validation.ShowErrorMessage = true;
                 validation.ErrorStyle = XLErrorStyle.Stop;
-                validation.ErrorTitle = "Schedule Sync for Revit";
+                validation.ErrorTitle = "Revit-Excel Link";
             }
         }
 

@@ -15,6 +15,21 @@ namespace RevitScheduleSync.Services
 
         ExportResult Export(IReadOnlyList<ScheduleAnalysis> analyses, ExportOptions options);
 
+        /// <summary>Model data: categories that have elements for the source and scope.</summary>
+        IReadOnlyList<CategoryChoice> GetCategories(ModelSourceKind source, ModelScope scope);
+
+        /// <summary>Model data: parameters found on the elements (and types) of the categories.</summary>
+        IReadOnlyList<ParameterChoice> GetParameters(ModelSourceKind source, ModelScope scope, IReadOnlyList<long> categoryIds, bool byType);
+
+        /// <summary>Model data: builds and writes one workbook for the request.</summary>
+        ExportResult ExportModel(ModelExportRequest request, ExportOptions options);
+
+        /// <summary>True when the active view can be used as a scope.</summary>
+        bool HasActiveView { get; }
+
+        /// <summary>Elements selected in Revit when the window opened.</summary>
+        int SelectionCount { get; }
+
         /// <summary>Reads a workbook and compares it with the model. Read-only: never writes to the model.</summary>
         ChangeSet AnalyseImport(string workbookPath);
 

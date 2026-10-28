@@ -353,7 +353,7 @@ namespace RevitScheduleSync.Revit.Schedules
             }
         }
 
-        private static ExportColumn MakeColumn(ScheduleFieldInfo field, bool sheetEditable)
+        internal static ExportColumn MakeColumn(ScheduleFieldInfo field, bool sheetEditable)
         {
             var kind = field.Storage switch
             {

@@ -10,6 +10,7 @@ using RevitScheduleSync.Models.Export;
 using RevitScheduleSync.Models.Import;
 using RevitScheduleSync.Revit.Documents;
 using RevitScheduleSync.Revit.Parameters;
+using RevitScheduleSync.Revit.Styles;
 using RevitScheduleSync.Sync;
 
 namespace RevitScheduleSync.Revit.Import
@@ -26,6 +27,7 @@ namespace RevitScheduleSync.Revit.Import
         private readonly ParameterLocator _parameters;
         private readonly ExcelValueParser _parser;
         private readonly ReferenceResolver _references;
+        private readonly StyleAccess _styles;
         private readonly Dictionary<long, Dictionary<long, int>> _instancesPerTypeByCategory = new();
 
         public ImportAnalyser(Document document, ILogger logger)
@@ -35,6 +37,7 @@ namespace RevitScheduleSync.Revit.Import
             _parameters = new ParameterLocator(document);
             _parser = new ExcelValueParser(document);
             _references = new ReferenceResolver(document);
+            _styles = new StyleAccess(document);
         }
 
         public ChangeSet Analyse(ImportWorkbook workbook)
@@ -59,7 +62,11 @@ namespace RevitScheduleSync.Revit.Import
             var items = new List<ChangeItem>();
             foreach (var sheet in workbook.Sheets.Where(s => s.SheetFound))
             {
-                if (_document.GetElement(sheet.ScheduleUniqueId) is not ViewSchedule schedule)
+                if (sheet.Source != SheetSource.Schedule)
+                {
+                    // Element sheets are matched row by row; there is no schedule to check.
+                }
+                else if (_document.GetElement(sheet.ScheduleUniqueId) is not ViewSchedule schedule)
                 {
                     issues.Add(new ImportIssue(IssueSeverity.Info, sheet.SheetName,
                         $"Schedule \"{sheet.ScheduleName}\" no longer exists. Rows are still matched to elements by their ids."));
@@ -70,9 +77,21 @@ namespace RevitScheduleSync.Revit.Import
                         $"Schedule was renamed to \"{schedule.Name}\" since export. Rows are matched by element ids, not names."));
                 }
 
-                foreach (var row in sheet.Rows.Where(r => r.ExcelRow.HasValue))
+                foreach (var row in sheet.Rows.Where(r => r.ExcelRow.HasValue && !r.IsLinked))
                 {
-                    AnalyseRow(sheet, row, items);
+                    if (sheet.Source is SheetSource.ObjectStyles or SheetSource.LineStyles)
+                    {
+                        AnalyseStyleRow(sheet, row, items);
+                    }
+                    else
+                    {
+                        AnalyseRow(sheet, row, items);
+                    }
+                }
+
+                foreach (var newRow in sheet.NewRows)
+                {
+                    items.Add(AnalyseNewRow(sheet, newRow));
                 }
             }
 
@@ -131,7 +150,8 @@ namespace RevitScheduleSync.Revit.Import
             bool typeSwapped = row.TypeUniqueId != null && type != null && type.UniqueId != row.TypeUniqueId;
             string label = Label(element);
 
-            foreach (var column in sheet.Columns.Where(c => c.ExcelColumn.HasValue))
+            // Information columns (Element ID, Family, Phase of existing rows ...) are never imported.
+            foreach (var column in sheet.Columns.Where(c => c.ExcelColumn.HasValue && c.Parameter.Source != ParameterSource.Info))
             {
                 if (!row.Values.TryGetValue(column.FieldId, out var excel))
                 {
@@ -370,6 +390,7 @@ namespace RevitScheduleSync.Revit.Import
                 item.Decision = item.Status switch
                 {
                     ChangeStatus.Change => ReviewDecision.Apply,
+                    ChangeStatus.Create => ReviewDecision.Apply,
                     ChangeStatus.TypeChange => ReviewDecision.Pending,
                     ChangeStatus.Conflict when item.ConflictKind == ConflictKind.ThreeWay =>
                         item.Target != null ? ReviewDecision.Pending : ReviewDecision.KeepRevit,
@@ -443,6 +464,176 @@ namespace RevitScheduleSync.Revit.Import
                     _logger.Warning($"Worksharing status unavailable for element {target.Id.Value}.", ex);
                 }
             }
+        }
+
+        /// <summary>Object and line styles: the row is a category, the columns are graphic properties.</summary>
+        private void AnalyseStyleRow(ImportSheet sheet, ImportRow row, List<ChangeItem> items)
+        {
+            var category = _styles.CategoryOf(row.ElementUniqueId);
+            string label = category == null
+                ? $"Style {row.ElementId}"
+                : category.Parent == null ? category.Name : $"{category.Parent.Name} › {category.Name}";
+
+            foreach (var column in sheet.Columns.Where(c => c.ExcelColumn.HasValue && c.IsEditable && c.Parameter.Source == ParameterSource.Style))
+            {
+                if (!row.Values.TryGetValue(column.FieldId, out var excel) || !row.Originals.TryGetValue(column.FieldId, out var original))
+                {
+                    continue;
+                }
+
+                var key = column.Parameter.BuiltInName ?? string.Empty;
+                var parsed = _parser.Parse(excel, column);
+                if (category == null)
+                {
+                    if (!ValueComparer.AreEqual(column.Kind, original.Normalised, parsed.Normalised))
+                    {
+                        items.Add(StyleItem(sheet, row, column, label, ChangeStatus.MissingElement, original.Display, string.Empty, parsed.Display,
+                            "The style no longer exists in the model."));
+                    }
+
+                    continue;
+                }
+
+                var current = _styles.Read(category, key);
+                var threeWay = ValueComparer.Classify(column.Kind, original.Normalised, current.Normalised, parsed.Normalised);
+                if (threeWay == ThreeWay.NoChange)
+                {
+                    continue;
+                }
+
+                if (threeWay != ThreeWay.ExcelChange)
+                {
+                    var status = threeWay switch
+                    {
+                        ThreeWay.RevitChange => ChangeStatus.RevitChanged,
+                        ThreeWay.SameChange => ChangeStatus.SameChange,
+                        _ => ChangeStatus.Conflict
+                    };
+                    var item = StyleItem(sheet, row, column, label, status, original.Display, current.Display, parsed.Display,
+                        status == ChangeStatus.Conflict ? "Changed in both Revit and Excel. Revit value kept." : "Revit value kept.");
+                    item.ConflictKind = status == ChangeStatus.Conflict ? ConflictKind.Disagreement : ConflictKind.None;
+                    items.Add(item);
+                    continue;
+                }
+
+                var (target, error) = _styles.Resolve(key, parsed.Normalised);
+                items.Add(target == null
+                    ? StyleItem(sheet, row, column, label, ChangeStatus.Invalid, original.Display, current.Display, parsed.Display, error!)
+                    : StyleItem(sheet, row, column, label, ChangeStatus.Change, original.Display, current.Display, parsed.Display,
+                        string.Empty, parsed.Normalised, target, current.Normalised));
+            }
+        }
+
+        private static ChangeItem StyleItem(
+            ImportSheet sheet, ImportRow row, ImportColumn column, string label, ChangeStatus status,
+            string original, string current, string excel, string message,
+            string? excelNormalised = null, TargetValue? target = null, string? currentNormalised = null) => new()
+        {
+            Status = status,
+            SheetName = sheet.SheetName,
+            ScheduleName = sheet.ScheduleName,
+            ElementUniqueId = row.ElementUniqueId,
+            ElementId = row.ElementId,
+            ElementLabel = label,
+            FieldId = column.FieldId,
+            ParameterName = column.Heading,
+            ParameterKey = column.Parameter.Key,
+            Parameter = column.Parameter,
+            Kind = column.Kind,
+            IsType = false,
+            ExcelRow = row.ExcelRow,
+            Original = original,
+            Current = current,
+            Excel = excel,
+            ExcelNormalised = excelNormalised,
+            CurrentNormalised = currentNormalised,
+            Target = status == ChangeStatus.Change ? target : null,
+            Message = message
+        };
+
+        /// <summary>
+        /// A row added in Excel to a rooms or spaces sheet. The values are checked here; references
+        /// (levels, materials ...) are resolved when the element exists, in the Apply step.
+        /// </summary>
+        private ChangeItem AnalyseNewRow(ImportSheet sheet, ImportNewRow newRow)
+        {
+            var values = new List<NewElementValue>();
+            var problems = new List<string>();
+            string phaseName = string.Empty, number = string.Empty, name = string.Empty;
+
+            foreach (var column in sheet.Columns.Where(c => c.IsEditable && c.ExcelColumn.HasValue))
+            {
+                if (!newRow.Values.TryGetValue(column.FieldId, out var excel) || excel.IsBlank)
+                {
+                    if (column.RequiredForNewRows)
+                    {
+                        problems.Add($"\"{column.Heading}\" is required.");
+                    }
+
+                    continue;
+                }
+
+                var parsed = _parser.Parse(excel, column);
+                if (!parsed.IsValid)
+                {
+                    problems.Add($"\"{column.Heading}\": {parsed.Error}");
+                    continue;
+                }
+
+                if (column.Parameter.Source == ParameterSource.Info)
+                {
+                    if (column.Parameter.BuiltInName == "Phase")
+                    {
+                        phaseName = parsed.Normalised;
+                    }
+
+                    continue;
+                }
+
+                if (column.Parameter.BuiltInName == nameof(BuiltInParameter.ROOM_NUMBER))
+                {
+                    number = parsed.Normalised;
+                }
+                else if (column.Parameter.BuiltInName == nameof(BuiltInParameter.ROOM_NAME))
+                {
+                    name = parsed.Normalised;
+                }
+
+                values.Add(new NewElementValue(column.Parameter, column.Heading, column.Kind, column.ExportUnitTypeId,
+                    parsed.Display, parsed.Normalised, parsed.Target));
+            }
+
+            if (phaseName.Length > 0 && !new FilteredElementCollector(_document).OfClass(typeof(Phase)).Any(p => p.Name == phaseName))
+            {
+                problems.Add($"Phase \"{phaseName}\" does not exist in the model.");
+            }
+
+            bool rooms = sheet.Source == SheetSource.Rooms;
+            string kind = rooms ? "room" : "space";
+            string label = $"New {kind} {number} {name}".TrimEnd();
+            return new ChangeItem
+            {
+                Status = problems.Count == 0 ? ChangeStatus.Create : ChangeStatus.Invalid,
+                SheetName = sheet.SheetName,
+                ScheduleName = sheet.ScheduleName,
+                ElementUniqueId = string.Empty,
+                ElementId = -1,
+                ElementLabel = label,
+                FieldId = -1,
+                ParameterName = $"New {kind}",
+                ParameterKey = $"new:{newRow.ExcelRow}",
+                IsType = false,
+                ExcelRow = newRow.ExcelRow,
+                Original = string.Empty,
+                Current = string.Empty,
+                Excel = string.Join(" · ", values.Select(v => $"{v.Heading}: {v.Excel}")),
+                NewElement = problems.Count == 0
+                    ? new NewElementRequest { Source = sheet.Source, PhaseName = phaseName, Values = values }
+                    : null,
+                Message = problems.Count == 0
+                    ? $"Creates an unplaced {kind} in phase \"{phaseName}\". Place it in a plan view afterwards."
+                    : "Not created: " + string.Join(" ", problems)
+            };
         }
 
         private static ChangeItem NewItem(

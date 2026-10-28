@@ -20,7 +20,7 @@
             <StackPanel>
                 <TextBlock Text="Import from Excel" Style="{StaticResource Text.Title}" />
                 <TextBlock Style="{StaticResource Text.Muted}" Margin="0,2,0,0"
-                           Text="Choose a workbook exported by Schedule Sync. It is analysed and compared first; nothing is written to the model." />
+                           Text="Choose a workbook exported by Revit-Excel Link. It is analysed and compared first; nothing is written to the model." />
             </StackPanel>
             <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top" Margin="16,2,0,0">
                 <Border Style="{StaticResource StepPill.Current}">
@@ -41,7 +41,7 @@
             <StackPanel>
                 <TextBlock Text="Before you import" Style="{StaticResource Text.Heading}" Margin="0,0,0,6" />
                 <TextBlock Style="{StaticResource Text.Body}" Margin="0,1"
-                           Text="•  Save the workbook in Excel first. Unsaved edits are not visible to Schedule Sync." />
+                           Text="•  Save the workbook in Excel first. Unsaved edits are not visible to Revit-Excel Link." />
                 <TextBlock Style="{StaticResource Text.Body}" Margin="0,1"
                            Text="•  The workbook must come from this project. Workbooks from another project are blocked." />
                 <TextBlock Style="{StaticResource Text.Body}" Margin="0,1"

@@ -33,8 +33,8 @@ namespace RevitScheduleSync.Excel
             if (!book.Worksheets.TryGetWorksheet(WorkbookSchema.MetadataSheetName, out var metadataSheet))
             {
                 throw new ScheduleSyncException(
-                    "This workbook was not created by Schedule Sync for Revit, or its hidden metadata sheet was removed. " +
-                    "Only workbooks exported by Schedule Sync can be imported.");
+                    "This workbook was not created by Revit-Excel Link, or its hidden metadata sheet was removed. " +
+                    "Only workbooks exported by Revit-Excel Link can be imported.");
             }
 
             Metadata metadata;
@@ -134,6 +134,7 @@ namespace RevitScheduleSync.Excel
             var known = rowsMeta.Select(r => r.ElementUniqueId).ToHashSet(StringComparer.Ordinal);
             var rowOf = new Dictionary<string, int>(StringComparer.Ordinal);
             var duplicates = new HashSet<string>(StringComparer.Ordinal);
+            var newRows = new List<ImportNewRow>();
             int addedRows = 0, unknownRows = 0;
             int lastRow = ws.LastRowUsed()?.RowNumber() ?? 0;
 
@@ -142,9 +143,22 @@ namespace RevitScheduleSync.Excel
                 var uid = ws.Cell(r, WorkbookSchema.IdentityColumn).GetString().Trim();
                 if (uid.Length == 0)
                 {
-                    if (columns.Any(c => c.ExcelColumn.HasValue && !ws.Cell(r, c.ExcelColumn.Value).IsEmpty()))
+                    if (columns.Any(c => c.IsEditable && c.ExcelColumn.HasValue && !ws.Cell(r, c.ExcelColumn.Value).IsEmpty()))
                     {
-                        addedRows++;
+                        if (info.AllowNewRows)
+                        {
+                            var entered = new Dictionary<int, ExcelValue>();
+                            foreach (var column in columns.Where(c => c.IsEditable && c.ExcelColumn.HasValue))
+                            {
+                                entered[column.FieldId] = ReadCell(ws.Cell(r, column.ExcelColumn!.Value));
+                            }
+
+                            newRows.Add(new ImportNewRow { ExcelRow = r, Values = entered });
+                        }
+                        else
+                        {
+                            addedRows++;
+                        }
                     }
 
                     continue;
@@ -204,7 +218,13 @@ namespace RevitScheduleSync.Excel
                 rows.Add(meta.ToImportRow(excelRow, values, originals));
             }
 
-            return Build(info, true, columns, rows);
+            if (newRows.Count > 0)
+            {
+                issues.Add(new ImportIssue(IssueSeverity.Info, info.SheetName,
+                    $"{newRows.Count} new row(s) found: each one is reviewed as a new element to create."));
+            }
+
+            return Build(info, true, columns, rows, newRows);
         }
 
         /// <summary>
@@ -259,12 +279,16 @@ namespace RevitScheduleSync.Excel
             };
         }
 
-        private static ImportSheet Build(SheetInfo info, bool found, List<ImportColumn> columns, List<ImportRow> rows) => new()
+        private static ImportSheet Build(
+            SheetInfo info, bool found, List<ImportColumn> columns, List<ImportRow> rows, List<ImportNewRow>? newRows = null) => new()
         {
             SheetName = info.SheetName,
             ScheduleUniqueId = info.ScheduleUniqueId,
             ScheduleName = info.ScheduleName,
             Mode = info.Mode,
+            Source = info.Source,
+            AllowNewRows = info.AllowNewRows,
+            NewRows = newRows ?? [],
             SheetFound = found,
             Columns = columns,
             Rows = rows
@@ -272,11 +296,14 @@ namespace RevitScheduleSync.Excel
 
         // ---- Metadata sheet parsing ------------------------------------------------------------
 
-        private sealed record SheetInfo(string SheetName, string ScheduleUniqueId, string ScheduleName, SheetMode Mode, int HeaderRow, int FirstDataRow);
+        private sealed record SheetInfo(
+            string SheetName, string ScheduleUniqueId, string ScheduleName, SheetMode Mode, int HeaderRow, int FirstDataRow,
+            SheetSource Source, bool AllowNewRows);
 
         private sealed record ColumnInfo(
             string SheetName, int ExcelColumn, int FieldId, string Heading, string FieldType, ParameterIdentity Parameter, bool IsType,
-            ValueStorage Storage, string SpecTypeId, string ExportUnitTypeId, CellKind Kind, bool Editable, string? ReadOnlyReason)
+            ValueStorage Storage, string SpecTypeId, string ExportUnitTypeId, CellKind Kind, bool Editable, string? ReadOnlyReason,
+            bool RequiredForNewRows)
         {
             public ImportColumn ToImportColumn(int? position) => new()
             {
@@ -291,11 +318,12 @@ namespace RevitScheduleSync.Excel
                 Kind = Kind,
                 IsEditable = Editable,
                 ReadOnlyReason = ReadOnlyReason,
+                RequiredForNewRows = RequiredForNewRows,
                 ExcelColumn = position
             };
         }
 
-        private sealed record RowInfo(string SheetName, string ElementUniqueId, long ElementId, string? TypeUniqueId, bool InGroup)
+        private sealed record RowInfo(string SheetName, string ElementUniqueId, long ElementId, string? TypeUniqueId, bool InGroup, bool IsLinked)
         {
             public ImportRow ToImportRow(
                 int? excelRow, Dictionary<int, ExcelValue> values,
@@ -305,6 +333,7 @@ namespace RevitScheduleSync.Excel
                 ElementId = ElementId,
                 TypeUniqueId = TypeUniqueId,
                 InGroup = InGroup,
+                IsLinked = IsLinked,
                 ExcelRow = excelRow,
                 Values = values,
                 Originals = originals.TryGetValue(ElementUniqueId, out var o) ? o : new Dictionary<int, OriginalValue>()
@@ -362,7 +391,7 @@ namespace RevitScheduleSync.Excel
                 if (version > WorkbookSchema.SchemaVersion)
                 {
                     throw new ScheduleSyncException(
-                        $"This workbook was created by a newer version of Schedule Sync (format {version}). Update the add-in to import it.");
+                        $"This workbook was created by a newer version of Revit-Excel Link (format {version}). Update the add-in to import it.");
                 }
 
                 metadata.SchemaVersion = version;
@@ -371,7 +400,10 @@ namespace RevitScheduleSync.Excel
                 {
                     metadata.Sheets.Add(new SheetInfo(
                         row.Get("SheetName"), row.Get("ScheduleUniqueId"), row.Get("ScheduleName"),
-                        Enum.Parse<SheetMode>(row.Get("Mode")), Int(row.Get("HeaderRow")), Int(row.Get("FirstDataRow"))));
+                        Enum.Parse<SheetMode>(row.Get("Mode")), Int(row.Get("HeaderRow")), Int(row.Get("FirstDataRow")),
+                        // Schema 1 workbooks have no Source column: they only contain schedules.
+                        Enum.TryParse<SheetSource>(row.Get("Source"), out var sheetSource) ? sheetSource : SheetSource.Schedule,
+                        row.Get("AllowNewRows") == "true"));
                 }
 
                 foreach (var row in Section(sections, WorkbookSchema.SectionColumns))
@@ -393,14 +425,15 @@ namespace RevitScheduleSync.Excel
                         row.Get("SheetName"), Int(row.Get("ExcelColumn")), Int(row.Get("FieldId")), row.Get("Heading"), row.Get("FieldType"),
                         identity, row.Get("IsType") == "true", Enum.Parse<ValueStorage>(row.Get("Storage")),
                         row.Get("SpecTypeId"), row.Get("ExportUnitTypeId"), Enum.Parse<CellKind>(row.Get("CellKind")),
-                        row.Get("Editable") == "true", NullIfEmpty(row.Get("ReadOnlyReason"))));
+                        row.Get("Editable") == "true", NullIfEmpty(row.Get("ReadOnlyReason")),
+                        row.Get("RequiredForNewRows") == "true"));
                 }
 
                 foreach (var row in Section(sections, WorkbookSchema.SectionRows))
                 {
                     metadata.Rows.Add(new RowInfo(
                         row.Get("SheetName"), row.Get("ElementUniqueId"), long.Parse(row.Get("ElementId"), CultureInfo.InvariantCulture),
-                        NullIfEmpty(row.Get("TypeUniqueId")), row.Get("InGroup") == "true"));
+                        NullIfEmpty(row.Get("TypeUniqueId")), row.Get("InGroup") == "true", row.Get("LinkName").Length > 0));
                 }
 
                 foreach (var row in Section(sections, WorkbookSchema.SectionValues))

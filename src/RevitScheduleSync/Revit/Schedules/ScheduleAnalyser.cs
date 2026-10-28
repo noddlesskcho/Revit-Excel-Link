@@ -11,7 +11,7 @@ namespace RevitScheduleSync.Revit.Schedules
 {
     /// <summary>
     /// Analyses every field of a schedule: real parameter identity, instance/type, storage,
-    /// spec and display unit, and whether Schedule Sync may edit it.
+    /// spec and display unit, and whether Revit-Excel Link may edit it.
     /// Read-only (no transaction). Must run in Revit API context.
     ///
     /// Writability is verified on a sample of the schedule's elements, because

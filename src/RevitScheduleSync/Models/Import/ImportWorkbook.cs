@@ -26,6 +26,14 @@ namespace RevitScheduleSync.Models.Import
         public required string ScheduleName { get; init; }
         public required SheetMode Mode { get; init; }
 
+        public SheetSource Source { get; init; } = SheetSource.Schedule;
+
+        /// <summary>True when rows added in Excel create new elements (rooms, spaces).</summary>
+        public bool AllowNewRows { get; init; }
+
+        /// <summary>Rows added in Excel (blank identity, some values entered).</summary>
+        public IReadOnlyList<ImportNewRow> NewRows { get; init; } = [];
+
         /// <summary>False when the visible sheet was not found in the workbook.</summary>
         public required bool SheetFound { get; init; }
 
@@ -50,6 +58,8 @@ namespace RevitScheduleSync.Models.Import
         public required bool IsEditable { get; init; }
         public string? ReadOnlyReason { get; init; }
 
+        public bool RequiredForNewRows { get; init; }
+
         /// <summary>Where the column was found in the sheet now; null when it is missing.</summary>
         public int? ExcelColumn { get; init; }
     }
@@ -61,6 +71,9 @@ namespace RevitScheduleSync.Models.Import
         public string? TypeUniqueId { get; init; }
         public required bool InGroup { get; init; }
 
+        /// <summary>Linked-model row: shown for information, never written.</summary>
+        public bool IsLinked { get; init; }
+
         /// <summary>Row where the element currently sits in the sheet (users may filter/sort); null if the row was deleted.</summary>
         public int? ExcelRow { get; init; }
 
@@ -69,6 +82,15 @@ namespace RevitScheduleSync.Models.Import
 
         /// <summary>Original exported values by FieldId (editable columns only).</summary>
         public required IReadOnlyDictionary<int, OriginalValue> Originals { get; init; }
+    }
+
+    /// <summary>A row added in Excel: a request to create a new element (rooms and spaces).</summary>
+    public sealed class ImportNewRow
+    {
+        public required int ExcelRow { get; init; }
+
+        /// <summary>Entered values by FieldId (editable columns that were found).</summary>
+        public required IReadOnlyDictionary<int, ExcelValue> Values { get; init; }
     }
 
     public enum ExcelValueKind

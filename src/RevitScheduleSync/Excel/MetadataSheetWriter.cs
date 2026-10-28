@@ -55,7 +55,8 @@ namespace RevitScheduleSync.Excel
                 [
                     name, sheet.ScheduleUniqueId, Text(sheet.ScheduleElementId), sheet.ScheduleName, sheet.CategoryName,
                     sheet.Mode.ToString(), Text(WorkbookSchema.HeaderRow), Text(WorkbookSchema.FirstDataRow),
-                    Text(lastDataRow), editable ? Text(WorkbookSchema.IdentityColumn) : string.Empty
+                    Text(lastDataRow), editable ? Text(WorkbookSchema.IdentityColumn) : string.Empty,
+                    sheet.Source.ToString(), sheet.AllowNewRows ? "true" : string.Empty
                 ]);
 
                 if (!editable)
@@ -77,7 +78,8 @@ namespace RevitScheduleSync.Excel
                         p.ParameterElementId.HasValue ? Text(p.ParameterElementId.Value) : string.Empty,
                         f.IsTypeParameter ? "true" : "false", f.Storage.ToString(), f.SpecTypeId, f.DisplayUnitTypeId,
                         column.ExportUnitTypeId, column.Kind.ToString(), f.Classification.ToString(),
-                        column.IsEditable ? "true" : "false", column.ReadOnlyReason ?? string.Empty
+                        column.IsEditable ? "true" : "false", column.ReadOnlyReason ?? string.Empty,
+                        column.RequiredForNewRows ? "true" : string.Empty
                     ]);
                 }
 
@@ -89,8 +91,14 @@ namespace RevitScheduleSync.Excel
                         name, exportRow.ElementUniqueId, Text(exportRow.ElementId), exportRow.TypeUniqueId ?? string.Empty,
                         exportRow.TypeId.HasValue ? Text(exportRow.TypeId.Value) : string.Empty, exportRow.CategoryName,
                         Text(WorkbookSchema.FirstDataRow + r), exportRow.InGroup ? "true" : "false",
-                        exportRow.DesignOptionName ?? string.Empty
+                        exportRow.DesignOptionName ?? string.Empty, exportRow.LinkName ?? string.Empty
                     ]);
+
+                    // Linked rows can never be written back, so their original values are not needed.
+                    if (exportRow.LinkName != null)
+                    {
+                        continue;
+                    }
 
                     // Original values of cells in editable columns: "A" in the three-way comparison on import.
                     // Locked cells are included (with their reason) so an edit to them can be reported, not applied.

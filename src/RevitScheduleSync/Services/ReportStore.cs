@@ -58,7 +58,7 @@ namespace RevitScheduleSync.Services
         public static void Write(ImportReport report, string path)
         {
             var csv = new StringBuilder();
-            csv.AppendLine("# Schedule Sync for Revit - import report");
+            csv.AppendLine("# Revit-Excel Link - import report");
             csv.AppendLine(Row("# Time", report.Time.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)));
             csv.AppendLine(Row("# Project", report.DocumentTitle));
             csv.AppendLine(Row("# Workbook", report.WorkbookPath));

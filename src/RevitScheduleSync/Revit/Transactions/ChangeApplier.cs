@@ -4,10 +4,14 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using Autodesk.Revit.DB;
+using Autodesk.Revit.DB.Architecture;
+using Autodesk.Revit.DB.Mechanical;
 using RevitScheduleSync.Logging;
 using RevitScheduleSync.Models;
+using RevitScheduleSync.Models.Export;
 using RevitScheduleSync.Models.Import;
 using RevitScheduleSync.Revit.Parameters;
+using RevitScheduleSync.Revit.Styles;
 using RevitScheduleSync.Sync;
 
 namespace RevitScheduleSync.Revit.Transactions
@@ -28,13 +32,18 @@ namespace RevitScheduleSync.Revit.Transactions
         private readonly Document _document;
         private readonly ILogger _logger;
         private readonly ParameterLocator _parameters;
-        private string _undoName = "Schedule Sync import";
+        private readonly StyleAccess _styles;
+        private readonly ReferenceResolver _references;
+        private readonly List<string> _notes = [];
+        private string _undoName = "Revit-Excel Link import";
 
         public ChangeApplier(Document document, ILogger logger)
         {
             _document = document;
             _logger = logger;
             _parameters = new ParameterLocator(document);
+            _styles = new StyleAccess(document);
+            _references = new ReferenceResolver(document);
         }
 
         public ImportReport Apply(ChangeSet changes)
@@ -46,7 +55,7 @@ namespace RevitScheduleSync.Revit.Transactions
             }
 
             // Shown in Revit's Undo list.
-            _undoName = $"Schedule Sync import ({Path.GetFileName(changes.Workbook.FilePath)})";
+            _undoName = $"Revit-Excel Link import ({Path.GetFileName(changes.Workbook.FilePath)})";
             var toWrite = changes.Items.Where(i => i.WillWrite).ToList();
             _logger.Info($"Apply started: {toWrite.Count} value(s) to write.");
 
@@ -90,7 +99,7 @@ namespace RevitScheduleSync.Revit.Transactions
                 WorkbookPath = changes.Workbook.FilePath,
                 DocumentTitle = _document.Title,
                 Entries = entries,
-                RevitWarnings = warnings.Distinct().ToList(),
+                RevitWarnings = _notes.Concat(warnings).Distinct().ToList(),
                 RolledBack = attempt.RolledBack && applied.Count == 0 && toWrite.Count > 0,
                 ElapsedMilliseconds = stopwatch.ElapsedMilliseconds
             };
@@ -108,6 +117,7 @@ namespace RevitScheduleSync.Revit.Transactions
         {
             var written = new List<ChangeItem>();
             var preprocessor = new ImportFailuresPreprocessor();
+            _notes.Clear();
 
             using var transaction = new Transaction(_document, _undoName);
             var options = transaction.GetFailureHandlingOptions();
@@ -172,6 +182,16 @@ namespace RevitScheduleSync.Revit.Transactions
         /// </summary>
         private string? Write(ChangeItem item)
         {
+            if (item.Status == ChangeStatus.Create)
+            {
+                return Create(item.NewElement!, item.ElementLabel);
+            }
+
+            if (item.Parameter?.Source == ParameterSource.Style)
+            {
+                return WriteStyle(item);
+            }
+
             var target = item.IsType
                 ? (item.TypeUniqueId == null ? null : _document.GetElement(item.TypeUniqueId))
                 : _document.GetElement(item.ElementUniqueId);
@@ -214,6 +234,92 @@ namespace RevitScheduleSync.Revit.Transactions
             return ok ? null : "Revit did not accept the value.";
         }
 
+        private string? WriteStyle(ChangeItem item)
+        {
+            var category = _styles.CategoryOf(item.ElementUniqueId);
+            if (category == null)
+            {
+                return "Style no longer exists.";
+            }
+
+            var key = item.Parameter!.BuiltInName ?? string.Empty;
+            var now = _styles.Read(category, key).Normalised;
+            if (item.CurrentNormalised != null && !ValueComparer.AreEqual(item.Kind, now, item.CurrentNormalised))
+            {
+                return "Value changed in Revit after analysis. Re-analyse the workbook.";
+            }
+
+            return _styles.Write(category, key, item.Target!);
+        }
+
+        /// <summary>
+        /// Creates an unplaced room or space in the named phase, then sets the entered values.
+        /// A value that cannot be set is reported as a note; the element is still created.
+        /// </summary>
+        private string? Create(NewElementRequest request, string label)
+        {
+            var phase = new FilteredElementCollector(_document).OfClass(typeof(Phase))
+                .FirstOrDefault(p => p.Name == request.PhaseName) as Phase;
+            if (phase == null)
+            {
+                return $"Phase \"{request.PhaseName}\" does not exist.";
+            }
+
+            SpatialElement element = request.Source == SheetSource.Spaces
+                ? _document.Create.NewSpace(phase)
+                : _document.Create.NewRoom(phase);
+            if (element == null)
+            {
+                return "Revit could not create the element.";
+            }
+
+            foreach (var value in request.Values)
+            {
+                var parameter = _parameters.Find(element, value.Parameter);
+                string? problem = null;
+                if (parameter == null)
+                {
+                    problem = "parameter not found on the new element";
+                }
+                else if (parameter.IsReadOnly)
+                {
+                    problem = "parameter is read-only";
+                }
+                else
+                {
+                    var target = value.Target;
+                    if (value.Kind == CellKind.Reference)
+                    {
+                        var (id, error) = _references.Resolve(parameter, value.Normalised);
+                        target = id == null ? null : TargetValue.OfElementId(id.Value);
+                        problem = error;
+                    }
+
+                    if (problem == null && (target == null || !Set(parameter, target)))
+                    {
+                        problem = "Revit did not accept the value";
+                    }
+                }
+
+                if (problem != null)
+                {
+                    _notes.Add($"{label}: \"{value.Heading}\" not set ({problem}).");
+                }
+            }
+
+            _logger.Info($"Created {(request.Source == SheetSource.Spaces ? "space" : "room")} {element.Id.Value} in phase '{phase.Name}'.");
+            return null;
+        }
+
+        private static bool Set(Parameter parameter, TargetValue value) => value.Storage switch
+        {
+            ValueStorage.String when parameter.StorageType == StorageType.String => parameter.Set(value.Text ?? string.Empty),
+            ValueStorage.Integer when parameter.StorageType == StorageType.Integer => parameter.Set(value.Integer!.Value),
+            ValueStorage.Double when parameter.StorageType == StorageType.Double => parameter.Set(value.Double!.Value),
+            ValueStorage.ElementId when parameter.StorageType == StorageType.ElementId => parameter.Set(new ElementId(value.ElementIdValue!.Value)),
+            _ => false
+        };
+
         private long TargetId(ChangeItem item)
         {
             if (item.IsType && item.TypeUniqueId != null)
@@ -231,7 +337,12 @@ namespace RevitScheduleSync.Revit.Transactions
 
             if (applied.Contains(item))
             {
-                (result, message) = (ReportResult.Applied, item.Status == ChangeStatus.Conflict ? "Conflict resolved: Excel value used." : "Applied.");
+                (result, message) = (ReportResult.Applied, item.Status switch
+                {
+                    ChangeStatus.Conflict => "Conflict resolved: Excel value used.",
+                    ChangeStatus.Create => "Created (unplaced). Place it in a plan view.",
+                    _ => "Applied."
+                });
             }
             else if (failed.TryGetValue(item, out var error))
             {
@@ -241,7 +352,7 @@ namespace RevitScheduleSync.Revit.Transactions
             {
                 (result, message) = item.Status switch
                 {
-                    ChangeStatus.Change or ChangeStatus.TypeChange => (ReportResult.Skipped,
+                    ChangeStatus.Change or ChangeStatus.TypeChange or ChangeStatus.Create => (ReportResult.Skipped,
                         item.Decision == ReviewDecision.Pending ? "Skipped: no decision was made." : "Skipped by reviewer."),
                     ChangeStatus.Conflict => (ReportResult.Conflict,
                         item.Decision == ReviewDecision.KeepRevit ? "Conflict: Revit value kept." : $"Conflict not applied. {item.Message}"),

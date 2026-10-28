@@ -1,4 +1,4 @@
-Schedule Sync for Revit - third-party components
+Revit-Excel Link - third-party components
 
 This product includes the following open-source components, redistributed unmodified
 under their licences. Full licence texts are available at the URLs given.
@@ -18,4 +18,4 @@ notice and permission notice are included. The software is provided "as is", wit
 Apache License 2.0: https://www.apache.org/licenses/LICENSE-2.0
 
 Autodesk, Revit and Autodesk App Store are registered trademarks or trademarks of Autodesk, Inc.
-Schedule Sync for Revit is not produced or endorsed by Autodesk, Inc.
+Revit-Excel Link is not produced or endorsed by Autodesk, Inc.

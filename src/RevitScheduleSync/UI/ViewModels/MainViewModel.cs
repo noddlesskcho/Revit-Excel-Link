@@ -20,6 +20,7 @@ namespace RevitScheduleSync.UI.ViewModels
             IScheduleOperations operations,
             Func<string?> chooseSavePath,
             ImportDialogs importDialogs,
+            ModelDataDialogs modelDataDialogs,
             IUserPrompts prompts,
             ReportStore reports,
             ILogger logger)
@@ -29,13 +30,26 @@ namespace RevitScheduleSync.UI.ViewModels
 
             Export = new ExportViewModel(scheduleScan, operations, chooseSavePath, logger, ReportError);
             var history = new HistoryViewModel(reports, ReportError);
+            var import = new ImportViewModel(operations, importDialogs, prompts, reports, history.Refresh, logger, ReportError);
+
+            // Tabs in the order of a typical round trip: pick data, export, edit in Excel, import, review.
+            ModelDataViewModel Tab(string title, params ModelSourceKind[] sources) =>
+                new(title, sources, operations, modelDataDialogs, logger, ReportError, () => SelectedSection = import);
+
+            var modelCategories = Tab("Model Categories", ModelSourceKind.ModelCategories);
             Sections =
             [
+                modelCategories,
+                Tab("Annotation Categories", ModelSourceKind.AnnotationCategories),
+                Tab("Elements", ModelSourceKind.Selection),
                 Export,
-                new ImportViewModel(operations, importDialogs, prompts, reports, history.Refresh, logger, ReportError),
+                Tab("Spatial", ModelSourceKind.Rooms, ModelSourceKind.Spaces),
+                Tab("Project Standards", ModelSourceKind.ProjectInformation, ModelSourceKind.ObjectStyles,
+                    ModelSourceKind.LineStyles, ModelSourceKind.Families),
+                import,
                 history
             ];
-            _selectedSection = Export;
+            _selectedSection = modelCategories;
 
             OpenLogFolderCommand = new RelayCommand(
                 OpenLogFolder,

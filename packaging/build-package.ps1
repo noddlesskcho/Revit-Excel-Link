@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-  Builds the Autodesk App Store bundle for Schedule Sync for Revit (Revit 2025 and 2026).
+  Builds the Autodesk App Store bundle for Revit-Excel Link (Revit 2025 and 2026).
 
 .DESCRIPTION
   Release builds (no deployment) -> artifacts\ScheduleSyncForRevit.bundle -> validated -> zipped.
@@ -42,7 +42,7 @@ if (-not (Test-Path $dotnet)) { $dotnet = 'dotnet' }
 
 $version = ([xml](Get-Content $project -Raw)).Project.PropertyGroup.Version | Where-Object { $_ } | Select-Object -First 1
 if (-not $version) { throw 'Version not found in RevitScheduleSync.csproj.' }
-Write-Host "Schedule Sync for Revit $version"
+Write-Host "Revit-Excel Link $version"
 
 # 1. Clean Release x64 builds, never deployed to the developer's Revit folders.
 #    Platform must be explicit: building a .csproj directly would otherwise output to bin\Release.

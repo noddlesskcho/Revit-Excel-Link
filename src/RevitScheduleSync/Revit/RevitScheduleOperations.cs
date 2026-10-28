@@ -12,6 +12,7 @@ using RevitScheduleSync.Models.Export;
 using RevitScheduleSync.Models.Import;
 using RevitScheduleSync.Revit.Documents;
 using RevitScheduleSync.Revit.Import;
+using RevitScheduleSync.Revit.ModelData;
 using RevitScheduleSync.Revit.Schedules;
 using RevitScheduleSync.Revit.Transactions;
 using RevitScheduleSync.Services;
@@ -27,10 +28,13 @@ namespace RevitScheduleSync.Revit
         private readonly IWorkbookReader _reader;
         private readonly ILogger _logger;
         private readonly ScheduleAnalyser _analyser;
+        private readonly ModelCatalog _catalog;
 
         public RevitScheduleOperations(
-            Application application, Document document, IWorkbookWriter writer, IWorkbookReader reader, ILogger logger)
+            Application application, Document document, IWorkbookWriter writer, IWorkbookReader reader, ILogger logger,
+            ElementId? activeViewId = null, IReadOnlyCollection<ElementId>? selection = null)
         {
+            _catalog = new ModelCatalog(document, activeViewId, selection ?? [], logger);
             _application = application;
             _document = document;
             _writer = writer;
@@ -52,6 +56,30 @@ namespace RevitScheduleSync.Revit
 
         public ImportReport Apply(ChangeSet changes) => new ChangeApplier(_document, _logger).Apply(changes);
 
+        public bool HasActiveView => _catalog.HasActiveView;
+
+        public int SelectionCount => _catalog.SelectionCount;
+
+        public IReadOnlyList<CategoryChoice> GetCategories(ModelSourceKind source, ModelScope scope) =>
+            _catalog.Categories(source, scope);
+
+        public IReadOnlyList<ParameterChoice> GetParameters(ModelSourceKind source, ModelScope scope, IReadOnlyList<long> categoryIds, bool byType) =>
+            _catalog.Parameters(source, scope, categoryIds, byType);
+
+        public ExportResult ExportModel(ModelExportRequest request, ExportOptions options)
+        {
+            var stopwatch = Stopwatch.StartNew();
+            _logger.Info($"Model export started: {request.Source}, {request.CategoryIds.Count} categories, {request.ParameterKeys.Count} parameters.");
+
+            var sheets = new ModelSheetBuilder(_document, _catalog, _logger).Build(request);
+            if (sheets.Count == 0)
+            {
+                throw new ScheduleSyncException("Nothing to export: the selected categories have no elements in this scope.");
+            }
+
+            return Write(sheets, options, stopwatch);
+        }
+
         public IReadOnlyList<ScheduleAnalysis> Analyse(IReadOnlyList<ScheduleSummary> schedules) =>
             _analyser.AnalyseAll(schedules);
 
@@ -63,7 +91,11 @@ namespace RevitScheduleSync.Revit
             // 1. Read everything from Revit (API context) into plain data.
             var builder = new ScheduleExportBuilder(_document, _logger);
             var sheets = analyses.Where(a => a.Error == null).Select(builder.Build).ToList();
+            return Write(sheets, options, stopwatch);
+        }
 
+        private ExportResult Write(IReadOnlyList<ExportSheet> sheets, ExportOptions options, Stopwatch stopwatch)
+        {
             var workbook = new ExportWorkbook
             {
                 Info = new WorkbookInfo

@@ -26,7 +26,7 @@ namespace RevitScheduleSync.UI
                 InitialDirectory = GetInitialDirectory(document)
             };
 
-            // No explicit owner: the active window is the modal Schedule Sync window.
+            // No explicit owner: the active window is the modal Revit-Excel Link window.
             return dialog.ShowDialog() == true ? dialog.FileName : null;
         }
 
@@ -56,6 +56,63 @@ namespace RevitScheduleSync.UI
                 OverwritePrompt = true,
                 FileName = defaultName,
                 InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)
+            };
+
+            return dialog.ShowDialog() == true ? dialog.FileName : null;
+        }
+
+        /// <summary>Asks for the model-data workbook path. Returns null when the user cancels.</summary>
+        public static string? ChooseModelExportPath(Document document, string sourceName)
+        {
+            var title = Path.GetFileNameWithoutExtension(document.Title);
+            var invalid = Path.GetInvalidFileNameChars();
+            var safe = new string($"{title} - {sourceName}".Select(c => invalid.Contains(c) ? '_' : c).ToArray());
+
+            var dialog = new SaveFileDialog
+            {
+                Title = "Export model data to Excel",
+                Filter = "Excel workbook (*.xlsx)|*.xlsx",
+                DefaultExt = ".xlsx",
+                AddExtension = true,
+                OverwritePrompt = true,
+                FileName = $"{safe} {DateTime.Now:yyyy-MM-dd HHmm}.xlsx",
+                InitialDirectory = GetInitialDirectory(document)
+            };
+
+            return dialog.ShowDialog() == true ? dialog.FileName : null;
+        }
+
+        /// <summary>Profiles live in %APPDATA%\RevitScheduleSync\Profiles by default; any folder (e.g. a shared one) works.</summary>
+        public static string ProfileDirectory()
+        {
+            var folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "RevitScheduleSync", "Profiles");
+            Directory.CreateDirectory(folder);
+            return folder;
+        }
+
+        public static string? ChooseProfileSavePath()
+        {
+            var dialog = new SaveFileDialog
+            {
+                Title = "Save export profile",
+                Filter = "Export profile (*.json)|*.json",
+                DefaultExt = ".json",
+                AddExtension = true,
+                OverwritePrompt = true,
+                InitialDirectory = ProfileDirectory()
+            };
+
+            return dialog.ShowDialog() == true ? dialog.FileName : null;
+        }
+
+        public static string? ChooseProfileOpenPath()
+        {
+            var dialog = new OpenFileDialog
+            {
+                Title = "Load export profile",
+                Filter = "Export profile (*.json)|*.json",
+                CheckFileExists = true,
+                InitialDirectory = ProfileDirectory()
             };
 
             return dialog.ShowDialog() == true ? dialog.FileName : null;

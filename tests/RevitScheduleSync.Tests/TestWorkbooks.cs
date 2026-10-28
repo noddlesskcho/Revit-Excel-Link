@@ -113,7 +113,7 @@ namespace RevitScheduleSync.Tests
             return path;
         }
 
-        private static ExportColumn Column(int index, int fieldId, string heading, string fieldType, ParameterIdentity parameter,
+        internal static ExportColumn Column(int index, int fieldId, string heading, string fieldType, ParameterIdentity parameter,
             bool isType, ValueStorage storage, FieldClassification classification, CellKind kind, bool editable,
             string? reason = null, string unit = "", string? format = null) => new()
         {
@@ -153,10 +153,10 @@ namespace RevitScheduleSync.Tests
             NumberFormat = format
         };
 
-        private static ParameterIdentity BuiltIn(string name, string builtIn) =>
+        internal static ParameterIdentity BuiltIn(string name, string builtIn) =>
             new() { Source = ParameterSource.BuiltIn, Name = name, BuiltInName = builtIn, BuiltInValue = -1001 };
 
-        private static ExportCell Cell(object? value, string normalised) => new()
+        internal static ExportCell Cell(object? value, string normalised) => new()
         {
             Value = value,
             Raw = normalised,

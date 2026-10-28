@@ -136,7 +136,7 @@
         <Setter Property="TextElement.Foreground" Value="{StaticResource Brush.Accent}" />
     </Style>
 
-    <!-- Field classification badges: green = editable instance, blue = editable type
+    <!-- Field classification badges: green = editable instance, yellow = editable type
          (visually distinct because one edit affects many elements), grey = read-only, red tint = unsupported. -->
     <Style x:Key="FieldBadge" TargetType="Border">
         <Setter Property="CornerRadius" Value="3" />
@@ -150,8 +150,8 @@
                 <Setter Property="TextElement.Foreground" Value="#1E6B34" />
             </DataTrigger>
             <DataTrigger Binding="{Binding Classification}" Value="EditableType">
-                <Setter Property="Background" Value="#E3EEFB" />
-                <Setter Property="TextElement.Foreground" Value="#1D4F91" />
+                <Setter Property="Background" Value="#FFF1C2" />
+                <Setter Property="TextElement.Foreground" Value="#7A5A00" />
             </DataTrigger>
             <DataTrigger Binding="{Binding Classification}" Value="Unsupported">
                 <Setter Property="Background" Value="#FBEAEA" />

@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!--
-    Schedule Sync for Revit - add-in core, built once per supported Revit version:
+    Revit-Excel Link - add-in core, built once per supported Revit version:
       net10.0-windows -> Revit 2026 (Revit 2026.5 hosts .NET 10; loaded directly, isolated by Revit via UseRevitContext=False)
       net8.0-windows  -> Revit 2025 (Revit 2025 hosts .NET 8; loaded through RevitScheduleSync.Loader into a private
                          AssemblyLoadContext, because Revit 2025 has no add-in isolation)
@@ -18,9 +18,13 @@
     <RootNamespace>RevitScheduleSync</RootNamespace>
     <AssemblyName>RevitScheduleSync</AssemblyName>
 
-    <Version>1.0.0</Version>
-    <Product>Schedule Sync for Revit</Product>
-    <Company>Schedule Sync for Revit</Company>
+    <Version>1.1.0</Version>
+    <!-- Build date and time in the product version (window footer, ribbon tooltip, file properties),
+         so the newest installed build is obvious. The SDK appends "+<commit>" after it. -->
+    <BuildStamp>$([System.DateTime]::Now.ToString('yyyy-MM-dd HH:mm'))</BuildStamp>
+    <InformationalVersion>$(Version) build $(BuildStamp)</InformationalVersion>
+    <Product>Revit-Excel Link</Product>
+    <Company>Revit-Excel Link</Company>
 
     <!-- Plugin-style output: copy NuGet dependencies next to the add-in DLL and emit a .deps.json
          so the add-in load context (Revit 2026, or our loader in 2025) can resolve ClosedXML and its dependencies. -->
@@ -118,9 +122,9 @@
       <_DeployManifestOk>$(MSBuildLastTaskResult)</_DeployManifestOk>
     </PropertyGroup>
     <Message Condition="'$(_DeployFilesOk)' == 'true' and '$(_DeployManifestOk)' == 'true'"
-             Importance="high" Text="Deployed Schedule Sync for Revit $(RevitVersion) to $(_DeployFolder)" />
+             Importance="high" Text="Deployed Revit-Excel Link $(RevitVersion) to $(_DeployFolder)" />
     <Warning Condition="'$(_DeployFilesOk)' != 'true' or '$(_DeployManifestOk)' != 'true'"
-             Text="Schedule Sync for Revit $(RevitVersion) was NOT deployed: the add-in files are in use (is Revit running?). Close Revit and build again." />
+             Text="Revit-Excel Link $(RevitVersion) was NOT deployed: the add-in files are in use (is Revit running?). Close Revit and build again." />
   </Target>
 
 </Project>

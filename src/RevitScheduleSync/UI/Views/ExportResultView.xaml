@@ -84,7 +84,7 @@
                     <StackPanel>
                         <TextBlock Text="Before editing" Style="{StaticResource Text.Heading}" Margin="0,0,0,6" />
                         <TextBlock Style="{StaticResource Text.Body}" Margin="0,1"
-                                   Text="•  Edit white cells (instance) and blue cells (type: one change affects every element of that type)." />
+                                   Text="•  Edit white cells (instance) and yellow cells (type: one change affects every element of that type). Red cells are read-only." />
                         <TextBlock Style="{StaticResource Text.Body}" Margin="0,1"
                                    Text="•  Do not rename sheets, delete rows, or remove the hidden first column." />
                         <TextBlock Style="{StaticResource Text.Body}" Margin="0,1"

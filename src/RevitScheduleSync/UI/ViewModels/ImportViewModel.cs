@@ -104,7 +104,7 @@ namespace RevitScheduleSync.UI.ViewModels
         private void ExportReport(ImportReport report)
         {
             var path = _dialogs.ChooseReportPath(
-                $"Schedule Sync report {report.Time:yyyy-MM-dd HHmm} - {Path.GetFileNameWithoutExtension(report.DocumentTitle)}.csv");
+                $"Revit-Excel Link report {report.Time:yyyy-MM-dd HHmm} - {Path.GetFileNameWithoutExtension(report.DocumentTitle)}.csv");
             if (string.IsNullOrEmpty(path))
             {
                 return;
@@ -127,7 +127,8 @@ namespace RevitScheduleSync.UI.ViewModels
             int pending = changes.Items.Count(i => i.Decision == ReviewDecision.Pending);
 
             var text = new StringBuilder()
-                .AppendLine($"Instance values: {write.Count(i => !i.IsType)}")
+                .AppendLine($"Instance values: {write.Count(i => !i.IsType && i.Status != ChangeStatus.Create)}")
+                .AppendLine($"New rooms / spaces: {write.Count(i => i.Status == ChangeStatus.Create)}")
                 .AppendLine($"Type values: {types.Count} (affecting {types.Sum(i => i.AffectedInstances ?? 0):N0} instances)")
                 .AppendLine($"Conflicts resolved with the Excel value: {write.Count(i => i.Status == ChangeStatus.Conflict)}");
             if (pending > 0)

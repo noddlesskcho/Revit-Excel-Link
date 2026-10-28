@@ -1,6 +1,6 @@
 namespace RevitScheduleSync.Models
 {
-    /// <summary>How Schedule Sync may treat a schedule column.</summary>
+    /// <summary>How Revit-Excel Link may treat a schedule column.</summary>
     public enum FieldClassification
     {
         /// <summary>Instance parameter that Revit reports as writable.</summary>

@@ -120,7 +120,7 @@ namespace RevitScheduleSync.UI.ViewModels
         public string FingerprintText => string.Join(Environment.NewLine, Changes.Fingerprint.Reasons);
 
         // Summary cards: scoped to the selected schedule tab.
-        public int ChangeCount => Scoped.Count(r => r.Item.Status == ChangeStatus.Change);
+        public int ChangeCount => Scoped.Count(r => r.Item.Status is ChangeStatus.Change or ChangeStatus.Create);
         public int TypeChangeCount => Scoped.Count(r => r.Item.Status == ChangeStatus.TypeChange);
         public int ConflictCount => Scoped.Count(r => r.Item.Status == ChangeStatus.Conflict);
         public int WarningCount => Scoped.Count(r => ReviewFilter.IsWarning(r.Item.Status));
@@ -385,6 +385,7 @@ namespace RevitScheduleSync.UI.ViewModels
             ChangeStatus.MissingParameter => "Missing parameter",
             ChangeStatus.Blocked => "Blocked",
             ChangeStatus.Duplicate => "Duplicate",
+            ChangeStatus.Create => "New element",
             _ => Item.Status.ToString()
         };
 
@@ -441,6 +442,7 @@ namespace RevitScheduleSync.UI.ViewModels
         private static IReadOnlyList<ActionOption> CreateActions(ChangeItem item) => item.Status switch
         {
             ChangeStatus.Change => [new("Apply", ReviewDecision.Apply), new("Skip", ReviewDecision.Skip)],
+            ChangeStatus.Create => [new("Create", ReviewDecision.Apply), new("Skip", ReviewDecision.Skip)],
             ChangeStatus.TypeChange =>
             [
                 new("Needs approval", ReviewDecision.Pending),
@@ -488,7 +490,8 @@ namespace RevitScheduleSync.UI.ViewModels
             new("Changes and problems", i => i.Status != ChangeStatus.NoChange),
             new("Needs decision", i => i.Decision == ReviewDecision.Pending, dependsOnDecisions: true),
             new("Will be applied", i => i.WillWrite, dependsOnDecisions: true),
-            new("Changes", i => i.Status is ChangeStatus.Change or ChangeStatus.TypeChange),
+            new("Changes", i => i.Status is ChangeStatus.Change or ChangeStatus.TypeChange or ChangeStatus.Create),
+            new("New elements", i => i.Status == ChangeStatus.Create),
             new("Type changes", i => i.Status == ChangeStatus.TypeChange),
             new("Conflicts", i => i.Status == ChangeStatus.Conflict),
             new("Warnings", i => IsWarning(i.Status)),

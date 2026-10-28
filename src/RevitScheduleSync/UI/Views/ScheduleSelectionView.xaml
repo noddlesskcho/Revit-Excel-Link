@@ -160,7 +160,7 @@
             </DataGrid.Columns>
         </DataGrid>
 
-        <TextBlock Grid.Row="3" Text="This project has no schedules that Schedule Sync can list."
+        <TextBlock Grid.Row="3" Text="This project has no schedules that Revit-Excel Link can list."
                    Style="{StaticResource Text.Muted}" HorizontalAlignment="Center" VerticalAlignment="Center"
                    Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVisibility}}" />
 

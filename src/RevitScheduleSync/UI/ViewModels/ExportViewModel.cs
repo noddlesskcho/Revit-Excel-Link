@@ -29,7 +29,7 @@ namespace RevitScheduleSync.UI.ViewModels
             Func<string?> chooseSavePath,
             ILogger logger,
             Action<string, Exception> reportError)
-            : base("Export")
+            : base("Schedules")
         {
             _operations = operations;
             _chooseSavePath = chooseSavePath;

@@ -41,7 +41,10 @@ namespace RevitScheduleSync.Models.Import
         Blocked,
 
         /// <summary>Will be applied once elsewhere (same element/type and value in another row or sheet).</summary>
-        Duplicate
+        Duplicate,
+
+        /// <summary>Row added in Excel: a new element (room or space) will be created with the entered values.</summary>
+        Create
     }
 
     /// <summary>Why an item is a conflict; decides which review actions are possible.</summary>
@@ -81,6 +84,18 @@ namespace RevitScheduleSync.Models.Import
         public static TargetValue OfInteger(int value) => new(ValueStorage.Integer, null, value, null, null, false);
         public static TargetValue OfDouble(double internalValue) => new(ValueStorage.Double, null, null, internalValue, null, false);
         public static TargetValue OfElementId(long id) => new(ValueStorage.ElementId, null, null, null, id, false);
+    }
+
+    /// <summary>One value entered in a new row, to be set on the element after it is created.</summary>
+    public sealed record NewElementValue(
+        ParameterIdentity Parameter, string Heading, CellKind Kind, string ExportUnitTypeId, string Excel, string Normalised, TargetValue? Target);
+
+    /// <summary>What to create for a row added in Excel.</summary>
+    public sealed class NewElementRequest
+    {
+        public required SheetSource Source { get; init; }
+        public required string PhaseName { get; init; }
+        public required IReadOnlyList<NewElementValue> Values { get; init; }
     }
 
     public sealed class ChangeItem
@@ -125,13 +140,18 @@ namespace RevitScheduleSync.Models.Import
 
         public ConflictKind ConflictKind { get; set; }
 
+        /// <summary>Create items only: the element to create and its values.</summary>
+        public NewElementRequest? NewElement { get; init; }
+
         /// <summary>Review decision (Phase 6). Set by the analyser to a safe default.</summary>
         public ReviewDecision Decision { get; set; }
 
         public bool IsApplicable => Status is ChangeStatus.Change or ChangeStatus.TypeChange;
 
         /// <summary>True when the Apply phase will write this item's Excel value.</summary>
-        public bool WillWrite => Target != null && (
+        public bool WillWrite =>
+            (Status == ChangeStatus.Create && NewElement != null && Decision == ReviewDecision.Apply)
+            || Target != null && (
             (Status is ChangeStatus.Change or ChangeStatus.TypeChange && Decision == ReviewDecision.Apply)
             || (Status == ChangeStatus.Conflict && ConflictKind == ConflictKind.ThreeWay && Decision == ReviewDecision.UseExcel));
     }

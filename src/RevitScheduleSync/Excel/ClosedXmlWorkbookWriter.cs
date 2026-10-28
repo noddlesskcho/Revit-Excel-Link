@@ -38,8 +38,11 @@ namespace RevitScheduleSync.Excel
             var sheetNames = workbook.Sheets.Select(s => names.Allocate(s.ScheduleName)).ToList();
 
             using var book = new XLWorkbook();
-            book.Properties.Title = $"Schedule Sync for Revit export — {workbook.Info.Fingerprint.Title}";
-            book.Properties.Comments = "Edit only the white and blue cells. Do not rename sheets or remove the hidden column A.";
+            book.Properties.Title = $"Revit-Excel Link export — {workbook.Info.Fingerprint.Title}";
+            book.Properties.Comments = "Edit only the white and yellow cells. Do not rename sheets or remove the hidden column A.";
+
+            // Drop-down lists: created first so data validations can point at them.
+            var lists = ListSheetWriter.Create(book, workbook.Sheets);
 
             for (int i = 0; i < workbook.Sheets.Count; i++)
             {
@@ -47,7 +50,7 @@ namespace RevitScheduleSync.Excel
                 var worksheet = book.Worksheets.Add(sheetNames[i]);
                 if (sheet.Mode == SheetMode.Editable)
                 {
-                    ScheduleSheetWriter.WriteEditable(worksheet, sheet, options.ProtectReadOnlyCells, _logger);
+                    ScheduleSheetWriter.WriteEditable(worksheet, sheet, options.ProtectReadOnlyCells, lists, _logger);
                 }
                 else
                 {
@@ -59,9 +62,11 @@ namespace RevitScheduleSync.Excel
             MetadataSheetWriter.Write(metadata, workbook, sheetNames);
             metadata.Visibility = options.ShowMetadataSheet ? XLWorksheetVisibility.Visible : XLWorksheetVisibility.VeryHidden;
 
+            lists?.Finish(options.ShowMetadataSheet);
+
             if (book.Worksheets.Count > 1)
             {
-                book.Worksheet(1).SetTabActive();
+                book.Worksheets.First(w => w.Visibility == XLWorksheetVisibility.Visible).SetTabActive();
             }
 
             Save(book, target);
@@ -125,11 +130,11 @@ namespace RevitScheduleSync.Excel
             long rows = 20
                         + workbook.Sheets.Count
                         + workbook.Sheets.Sum(s => (long)s.Columns.Count + s.Rows.Count
-                                                   + (long)s.Rows.Count * s.Columns.Count(c => c.IsEditable));
+                                                   + (long)s.Rows.Count(r => r.LinkName == null) * s.Columns.Count(c => c.IsEditable));
             if (rows > WorkbookSchema.MaxMetadataRows)
             {
                 throw new ScheduleSyncException(
-                    "The selected schedules are too large for one workbook. Export fewer schedules at a time.");
+                    "The selection is too large for one workbook. Export fewer schedules or categories at a time.");
             }
         }
 
@@ -182,6 +187,7 @@ namespace RevitScheduleSync.Excel
             private readonly HashSet<string> _used = new(StringComparer.OrdinalIgnoreCase)
             {
                 WorkbookSchema.MetadataSheetName,
+                WorkbookSchema.ListsSheetName,
                 "History"
             };
 

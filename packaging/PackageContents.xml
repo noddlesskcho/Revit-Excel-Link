@@ -7,7 +7,7 @@
 <ApplicationPackage SchemaVersion="1.0"
                     AutodeskProduct="Revit"
                     ProductType="Application"
-                    Name="Schedule Sync for Revit"
+                    Name="Revit-Excel Link"
                     AppVersion="$VERSION$"
                     FriendlyVersion="$VERSION$"
                     Description="Export Revit schedules to Excel, edit them, and import reviewed changes back safely with three-way comparison."
@@ -23,14 +23,14 @@
   <RuntimeRequirements OS="Win64" Platform="Revit" SeriesMin="R2025" SeriesMax="R2026" />
   <Components Description="Revit 2025">
     <RuntimeRequirements OS="Win64" Platform="Revit" SeriesMin="R2025" SeriesMax="R2025" />
-    <ComponentEntry AppName="Schedule Sync for Revit"
+    <ComponentEntry AppName="Revit-Excel Link"
                     Version="$VERSION$"
                     AppDescription="Schedule to Excel export and reviewed import for Revit 2025."
                     ModuleName=".\Contents\2025\ScheduleSync.addin" />
   </Components>
   <Components Description="Revit 2026">
     <RuntimeRequirements OS="Win64" Platform="Revit" SeriesMin="R2026" SeriesMax="R2026" />
-    <ComponentEntry AppName="Schedule Sync for Revit"
+    <ComponentEntry AppName="Revit-Excel Link"
                     Version="$VERSION$"
                     AppDescription="Schedule to Excel export and reviewed import for Revit 2026."
                     ModuleName=".\Contents\2026\ScheduleSync.addin" />

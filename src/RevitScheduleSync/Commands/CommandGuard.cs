@@ -31,7 +31,7 @@ namespace RevitScheduleSync.Commands
             catch (Exception ex)
             {
                 logger.Error($"Command failed: {commandName} ({stopwatch.ElapsedMilliseconds} ms)", ex);
-                ErrorReporter.Show(logger, "Schedule Sync could not complete the command.", ex);
+                ErrorReporter.Show(logger, "Revit-Excel Link could not complete the command.", ex);
 
                 // The error has already been shown to the user. Returning Failed would make
                 // Revit show a second, less helpful dialog, so report the command as cancelled.

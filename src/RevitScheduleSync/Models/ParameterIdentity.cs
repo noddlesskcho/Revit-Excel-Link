@@ -14,7 +14,13 @@ namespace RevitScheduleSync.Models
         Shared,
 
         /// <summary>Non-shared project parameter, identified by its ParameterElement.</summary>
-        Project
+        Project,
+
+        /// <summary>Graphic property of an object or line style (line weight, colour ...), stored in BuiltInName.</summary>
+        Style,
+
+        /// <summary>Information column written by the add-in (Element ID, Family, Category ...). Never imported.</summary>
+        Info
     }
 
     /// <summary>
@@ -52,6 +58,8 @@ namespace RevitScheduleSync.Models
             ParameterSource.BuiltIn => $"bip:{BuiltInName}",
             ParameterSource.Shared => $"shared:{SharedGuid:D}",
             ParameterSource.Project => $"project:{Name}",
+            ParameterSource.Style => $"style:{BuiltInName}",
+            ParameterSource.Info => $"info:{BuiltInName}",
             _ => "none"
         };
 
@@ -60,6 +68,8 @@ namespace RevitScheduleSync.Models
             ParameterSource.BuiltIn => "Built-in",
             ParameterSource.Shared => "Shared",
             ParameterSource.Project => "Project",
+            ParameterSource.Style => "Style",
+            ParameterSource.Info => "Information",
             _ => "–"
         };
 

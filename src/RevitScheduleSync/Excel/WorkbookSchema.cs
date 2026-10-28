@@ -6,7 +6,10 @@ namespace RevitScheduleSync.Excel
     /// </summary>
     public static class WorkbookSchema
     {
-        public const int SchemaVersion = 1;
+        public const int SchemaVersion = 2;
+
+        /// <summary>Very hidden sheet holding the drop-down value lists (schema 2).</summary>
+        public const string ListsSheetName = "_RevitSyncLists";
 
         public const string MetadataSheetName = "_RevitSyncMetadata";
 
@@ -35,7 +38,7 @@ namespace RevitScheduleSync.Excel
         public static readonly string[] SheetsHeader =
         [
             "SheetName", "ScheduleUniqueId", "ScheduleElementId", "ScheduleName", "Category", "Mode",
-            "HeaderRow", "FirstDataRow", "LastDataRow", "IdentityColumn"
+            "HeaderRow", "FirstDataRow", "LastDataRow", "IdentityColumn", "Source", "AllowNewRows"
         ];
 
         public static readonly string[] ColumnsHeader =
@@ -43,13 +46,13 @@ namespace RevitScheduleSync.Excel
             "SheetName", "ExcelColumn", "FieldId", "FieldIndex", "Heading", "FieldType", "ParameterKey",
             "ParameterSource", "ParameterName", "BuiltInName", "BuiltInValue", "SharedGuid", "ParameterElementId",
             "IsType", "Storage", "SpecTypeId", "DisplayUnitTypeId", "ExportUnitTypeId", "CellKind",
-            "Classification", "Editable", "ReadOnlyReason"
+            "Classification", "Editable", "ReadOnlyReason", "RequiredForNewRows"
         ];
 
         public static readonly string[] RowsHeader =
         [
             "SheetName", "ElementUniqueId", "ElementId", "TypeUniqueId", "TypeId", "Category", "ExportedRow",
-            "InGroup", "DesignOption"
+            "InGroup", "DesignOption", "LinkName"
         ];
 
         public static readonly string[] ValuesHeader =

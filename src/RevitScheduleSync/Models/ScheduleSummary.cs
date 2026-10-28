@@ -12,7 +12,7 @@ namespace RevitScheduleSync.Models
         ViewList
     }
 
-    /// <summary>How far Schedule Sync can work with a schedule in V1.</summary>
+    /// <summary>How far Revit-Excel Link can work with a schedule in V1.</summary>
     public enum ScheduleSupport
     {
         /// <summary>Itemised: one row per element, round-trip editing planned.</summary>

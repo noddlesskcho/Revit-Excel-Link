@@ -151,7 +151,7 @@ namespace RevitScheduleSync.Tests
             }
 
             var error = Assert.Throws<ScheduleSyncException>(() => Read(path));
-            Assert.Contains("not created by Schedule Sync for Revit", error.Message);
+            Assert.Contains("not created by Revit-Excel Link", error.Message);
         }
 
         [Fact]

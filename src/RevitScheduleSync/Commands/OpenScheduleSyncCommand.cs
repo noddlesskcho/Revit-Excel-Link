@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Windows.Interop;
 using Autodesk.Revit.Attributes;
 using Autodesk.Revit.DB;
@@ -15,7 +16,7 @@ using RevitScheduleSync.UI.Views;
 namespace RevitScheduleSync.Commands
 {
     /// <summary>
-    /// Opens the Schedule Sync window.
+    /// Opens the Revit-Excel Link window.
     /// Manual transaction mode: the command itself never opens a transaction. The only transaction
     /// is opened by ChangeApplier in the import Apply step, after review and confirmation.
     /// </summary>
@@ -33,7 +34,7 @@ namespace RevitScheduleSync.Commands
                 var document = uiApplication.ActiveUIDocument?.Document;
                 if (document == null)
                 {
-                    TaskDialog.Show(PluginInfo.ProductName, "Open a Revit project before using Schedule Sync.");
+                    TaskDialog.Show(PluginInfo.ProductName, "Open a Revit project before using Revit-Excel Link.");
                     return Result.Cancelled;
                 }
 
@@ -43,14 +44,26 @@ namespace RevitScheduleSync.Commands
                 // cannot change while the user browses this snapshot.
                 var scheduleScan = new ScheduleCatalog(document, logger).Scan();
 
+                // Model data scopes: the active view (when it can hold elements) and the current selection.
+                var activeView = uiApplication.ActiveUIDocument!.ActiveView;
+                ElementId? activeViewId = activeView != null && activeView is not ViewSchedule && !activeView.IsTemplate
+                    ? activeView.Id
+                    : null;
+                var selection = uiApplication.ActiveUIDocument.Selection.GetElementIds().ToList();
+
                 var operations = new RevitScheduleOperations(
-                    uiApplication.Application, document, new ClosedXmlWorkbookWriter(logger), new ClosedXmlWorkbookReader(logger), logger);
+                    uiApplication.Application, document, new ClosedXmlWorkbookWriter(logger), new ClosedXmlWorkbookReader(logger), logger,
+                    activeViewId, selection);
                 var viewModel = new MainViewModel(
                     session,
                     scheduleScan,
                     operations,
                     () => SaveDialogs.ChooseExportPath(document),
                     new ImportDialogs(SaveDialogs.ChooseImportPath, SaveDialogs.ChooseReportPath),
+                    new ModelDataDialogs(
+                        source => SaveDialogs.ChooseModelExportPath(document, source),
+                        SaveDialogs.ChooseProfileSavePath,
+                        SaveDialogs.ChooseProfileOpenPath),
                     new TaskDialogPrompts(logger),
                     new ReportStore(logger),
                     logger);

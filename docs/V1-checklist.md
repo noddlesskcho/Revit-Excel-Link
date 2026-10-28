@@ -1,4 +1,4 @@
-# Revit Schedule Sync — V1 checklist
+# Revit-Excel Link — V1 checklist
 
 Status of the V1 definition of done (spec section 32) and the test cases (section 31).
 
@@ -51,7 +51,7 @@ Status of the V1 definition of done (spec section 32) and the test cases (sectio
 | 14 | Modify type parameter | Manual (Phase 6 step 3–4, Phase 7 step 2) |
 | 15 | Conflicting type values | Manual (Phase 5 step 11) |
 | 16 | Import into wrong project | Automated (fingerprint rules); manual (Phase 5 step 13) |
-| 17 | Corrupt workbook metadata | Automated (damaged, newer version, not a Schedule Sync workbook) |
+| 17 | Corrupt workbook metadata | Automated (damaged, newer version, not a Revit-Excel Link workbook) |
 | 18 | Grouped schedule | Automated (presentation sheet ignored); manual (Phase 3 step 5) |
 | 19 | Very large schedule | Automated: 20,000 rows × 11 columns, write ≈ 5 s, read ≈ 5 s (Release, excluding Revit reading). **Revit-side timing still to measure** on a real large model |
 | 20 | Workshared model | **Still to test** in a workshared model (ownership → Blocked / Failed, others applied) |

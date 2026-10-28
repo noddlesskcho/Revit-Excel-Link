@@ -32,8 +32,45 @@ namespace RevitScheduleSync.Models.Export
         Presentation
     }
 
+    /// <summary>Where the rows of a sheet come from. Decides how import matches and writes them.</summary>
+    public enum SheetSource
+    {
+        /// <summary>Rows of a Revit schedule.</summary>
+        Schedule,
+
+        /// <summary>Elements of one category (model or annotation), from the whole model, the active view or the selection.</summary>
+        Category,
+
+        /// <summary>Element types of one category (export by type).</summary>
+        CategoryTypes,
+
+        /// <summary>Rooms: rows added in Excel create new unplaced rooms on import.</summary>
+        Rooms,
+
+        /// <summary>MEP spaces: rows added in Excel create new unplaced spaces on import.</summary>
+        Spaces,
+
+        /// <summary>The project information element.</summary>
+        ProjectInformation,
+
+        /// <summary>Object styles (categories and subcategories): line weights, colour, pattern, material.</summary>
+        ObjectStyles,
+
+        /// <summary>Line styles (subcategories of Lines): line weight, colour, pattern.</summary>
+        LineStyles,
+
+        /// <summary>Loadable and system families with their types. Information only.</summary>
+        Families
+    }
+
     public sealed class ExportSheet
     {
+        /// <summary>Source of the rows. Schedule for schedule exports.</summary>
+        public SheetSource Source { get; init; } = SheetSource.Schedule;
+
+        /// <summary>Rows added in Excel (blank identity) create new elements on import (rooms and spaces only).</summary>
+        public bool AllowNewRows { get; init; }
+
         public required string ScheduleUniqueId { get; init; }
         public required long ScheduleElementId { get; init; }
         public required string ScheduleName { get; init; }
@@ -84,6 +121,13 @@ namespace RevitScheduleSync.Models.Export
 
         /// <summary>Excel number format, or null for General/text.</summary>
         public string? NumberFormat { get; init; }
+
+        /// <summary>Allowed values shown as an Excel drop-down list (names of levels, phases, materials ...).
+        /// Null when the column has no list.</summary>
+        public IReadOnlyList<string>? ListValues { get; init; }
+
+        /// <summary>Required to create a new element from a row added in Excel (rooms and spaces).</summary>
+        public bool RequiredForNewRows { get; init; }
     }
 
     public sealed class ExportRow
@@ -99,6 +143,9 @@ namespace RevitScheduleSync.Models.Export
 
         /// <summary>Design option name when the element is not in the main model.</summary>
         public string? DesignOptionName { get; init; }
+
+        /// <summary>Name of the linked model the element comes from; linked rows are always read-only.</summary>
+        public string? LinkName { get; init; }
 
         public required IReadOnlyList<ExportCell> Cells { get; init; }
     }

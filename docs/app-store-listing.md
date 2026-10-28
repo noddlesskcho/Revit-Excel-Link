@@ -16,7 +16,7 @@ Items marked **[YOU]** must come from you (publisher identity, contact, legal).
 
 ## Listing
 
-**App name:** Schedule Sync for Revit
+**App name:** Revit-Excel Link
 *(Autodesk naming rules: "Revit" may appear only as "… for Revit".)*
 
 **Price:** Free *(V1 has no licensing; can be changed for a later version).*
@@ -29,11 +29,11 @@ Items marked **[YOU]** must come from you (publisher identity, contact, legal).
 > Export Revit schedules to Excel, edit values, and bring changes back safely. Every change is compared, reviewed and approved before it touches the model.
 
 **Description:**
-> Schedule Sync for Revit turns Excel into a safe editing surface for your Revit schedules.
+> Revit-Excel Link turns Excel into a safe editing surface for your Revit schedules.
 >
 > Export one or many schedules to a single .xlsx workbook — no Microsoft Excel installation needed. Editable values, type values and read-only values are clearly marked, read-only cells can be locked, and units follow your project settings.
 >
-> When the workbook comes back, nothing is written straight away. Schedule Sync checks that the workbook belongs to the open project, finds every element by its unique id and every value by its real parameter, and compares three versions of each value: what was exported, what is in Revit now, and what is in Excel. Changes made in Revit since the export are never overwritten silently; conflicts and type-parameter changes (with the number of affected instances) wait for your decision.
+> When the workbook comes back, nothing is written straight away. Revit-Excel Link checks that the workbook belongs to the open project, finds every element by its unique id and every value by its real parameter, and compares three versions of each value: what was exported, what is in Revit now, and what is in Excel. Changes made in Revit since the export are never overwritten silently; conflicts and type-parameter changes (with the number of affected instances) wait for your decision.
 >
 > Review changes per schedule, approve them, and apply them in a single step that one Undo reverses. A report lists what was applied, skipped or refused, and is kept in the import history.
 
@@ -63,10 +63,10 @@ Items marked **[YOU]** must come from you (publisher identity, contact, legal).
 **Help / documentation:** included in the package (`Contents/Resources/help.html`); the same text can be pasted into the store's documentation field.
 
 **Privacy statement:**
-> Schedule Sync for Revit does not collect, transmit or store data outside your computer. It reads and writes only the Revit model you open and the Excel files you choose. Diagnostic logs (30 days) and import reports are stored locally in %LOCALAPPDATA%\RevitScheduleSync.
+> Revit-Excel Link does not collect, transmit or store data outside your computer. It reads and writes only the Revit model you open and the Excel files you choose. Diagnostic logs (30 days) and import reports are stored locally in %LOCALAPPDATA%\RevitScheduleSync.
 
 **Installation / uninstallation text:**
-> Install with the Autodesk App Store installer and restart Revit. The command appears under Add-Ins › Schedule Sync. Uninstall from Windows "Apps & features" (or remove the ScheduleSyncForRevit.bundle folder from %ProgramData%\Autodesk\ApplicationPlugins).
+> Install with the Autodesk App Store installer and restart Revit. The command appears under Add-Ins › Revit-Excel Link. Uninstall from Windows "Apps & features" (or remove the ScheduleSyncForRevit.bundle folder from %ProgramData%\Autodesk\ApplicationPlugins).
 
 ## Media
 

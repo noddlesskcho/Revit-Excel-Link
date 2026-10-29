@@ -15,7 +15,7 @@ Get the latest installer from [Releases](https://github.com/noddlesskcho/Revit-E
 
 Close Revit before installing. Both install the same bundle to
 `%APPDATA%\Autodesk\ApplicationPlugins\RevitExcelLink.bundle`; Revit picks the build for its own version.
-The **Revit-Excel Link** panel is on the Add-Ins tab. The window footer and button tooltip show the version
+The add-in has its own **Revit-Excel Link** ribbon tab. The window footer and button tooltip show the version
 with its build date and time.
 
 Features: export, import analysis (three-way comparison), review, apply (one Undo step), report and history.

@@ -72,4 +72,4 @@ $version = ([xml](Get-Content (Join-Path $target 'PackageContents.xml') -Raw)).A
 Write-Host ''
 Write-Host "Revit-Excel Link $version installed for $env:USERNAME."
 Write-Host "Location: $target"
-Write-Host 'Start Revit 2024, 2025, 2026 or 2027 and look for the Revit-Excel Link panel on the Add-Ins tab.'
+Write-Host 'Start Revit 2024, 2025, 2026 or 2027 and open the Revit-Excel Link tab on the ribbon.'

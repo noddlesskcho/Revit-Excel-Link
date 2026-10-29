@@ -7,10 +7,19 @@ namespace RevitScheduleSync.App
 {
     internal static class RibbonBuilder
     {
-        /// <summary>Adds the "Revit-Excel Link" panel to Revit's built-in Add-Ins tab.</summary>
+        /// <summary>Adds the "Revit-Excel Link" ribbon tab with an "Excel" panel.</summary>
         public static void Build(UIControlledApplication application, ILogger logger)
         {
-            var panel = application.CreateRibbonPanel(PluginInfo.RibbonPanelName);
+            try
+            {
+                application.CreateRibbonTab(PluginInfo.RibbonTabName);
+            }
+            catch (Autodesk.Revit.Exceptions.ArgumentException)
+            {
+                // The tab already exists (created earlier in this session); reuse it.
+            }
+
+            var panel = application.CreateRibbonPanel(PluginInfo.RibbonTabName, PluginInfo.RibbonPanelName);
 
             var entry = AddinHost.Entry;
             var buttonData = new PushButtonData(

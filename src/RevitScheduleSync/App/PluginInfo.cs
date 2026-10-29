@@ -6,7 +6,8 @@ namespace RevitScheduleSync.App
     internal static class PluginInfo
     {
         public const string ProductName = "Revit-Excel Link";
-        public const string RibbonPanelName = "Revit-Excel Link";
+        public const string RibbonTabName = "Revit-Excel Link";
+        public const string RibbonPanelName = "Excel";
         public const string OpenCommandButtonName = "RSS_OpenScheduleSync";
         public const string OpenCommandButtonText = "Excel\nLink";
 

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using Autodesk.Revit.DB;
 
 namespace RevitScheduleSync.Revit.Parameters
@@ -10,12 +11,15 @@ namespace RevitScheduleSync.Revit.Parameters
     /// to an element id, and lists the names offered in Excel drop-downs.
     /// Candidates are elements of the same class and category as the parameter's current value; when the
     /// parameter is empty, the kind is taken from its built-in name or its data type.
+    /// Types can also be named "Family: Type", so type names shared by several families stay usable.
     /// Raw numeric ids from Excel are never accepted. Ambiguous names are rejected.
     /// </summary>
     internal sealed class ReferenceResolver
     {
+        private static readonly Regex FamilySeparator = new(@"\s*:\s*", RegexOptions.CultureInvariant);
+
         private readonly Document _document;
-        private readonly Dictionary<string, ILookup<string, ElementId>> _cache = new(StringComparer.Ordinal);
+        private readonly Dictionary<string, NameIndex> _cache = new(StringComparer.Ordinal);
 
         public ReferenceResolver(Document document)
         {
@@ -35,28 +39,32 @@ namespace RevitScheduleSync.Revit.Parameters
                 return (null, "A name is required; clearing a reference is not supported.");
             }
 
-            var matches = candidates.Lookup[name.Trim()].ToList();
+            var trimmed = name.Trim();
+            var matches = candidates.Index.Lookup[trimmed].ToList();
+            if (matches.Count == 0 && trimmed.Contains(':'))
+            {
+                // "Family:Type" or "Family : Type" typed by hand.
+                matches = candidates.Index.Lookup[FamilySeparator.Replace(trimmed, ": ")].ToList();
+            }
+
             return matches.Count switch
             {
                 1 => (matches[0], null),
-                0 => (null, $"No {candidates.Description} named \"{name.Trim()}\" exists in the model."),
-                _ => (null, $"{matches.Count} elements named \"{name.Trim()}\" match; the reference is ambiguous.")
+                0 => (null, $"No {candidates.Description} named \"{trimmed}\" exists in the model."),
+                _ => (null, $"{matches.Count} elements named \"{trimmed}\" match; the reference is ambiguous. " +
+                            "For a type, enter it as \"Family: Type\".")
             };
         }
 
         /// <summary>Names offered in the Excel drop-down for this parameter, or null when the kind is unknown.
-        /// Names shared by several elements are left out: they could not be resolved on import.</summary>
-        public IReadOnlyList<string>? CandidateNames(Parameter parameter)
-        {
-            var candidates = GetCandidates(parameter);
-            return candidates?.Lookup
-                .Where(g => g.Count() == 1)
-                .Select(g => g.Key)
-                .OrderBy(n => n, StringComparer.CurrentCultureIgnoreCase)
-                .ToList();
-        }
+        /// Each element is offered once: by its plain name when that is unique, else as "Family: Type".</summary>
+        public IReadOnlyList<string>? CandidateNames(Parameter parameter) =>
+            GetCandidates(parameter)?.Index.Offered;
 
-        private sealed record Candidates(ILookup<string, ElementId> Lookup, string Description);
+        private sealed record Candidates(NameIndex Index, string Description);
+
+        /// <summary>Every accepted name (plain and "Family: Type") with its element ids, and the drop-down names.</summary>
+        private sealed record NameIndex(ILookup<string, ElementId> Lookup, IReadOnlyList<string> Offered);
 
         private Candidates? GetCandidates(Parameter parameter)
         {
@@ -120,13 +128,13 @@ namespace RevitScheduleSync.Revit.Parameters
             return null;
         }
 
-        private ILookup<string, ElementId> BySample(Element sample)
+        private NameIndex BySample(Element sample)
         {
             long categoryId = sample.Category?.Id.Value ?? 0;
             var key = $"sample:{sample.GetType().FullName}:{categoryId}";
-            if (_cache.TryGetValue(key, out var lookup))
+            if (_cache.TryGetValue(key, out var index))
             {
-                return lookup;
+                return index;
             }
 
             IEnumerable<Element> elements;
@@ -143,52 +151,70 @@ namespace RevitScheduleSync.Revit.Parameters
                         .Where(e => e.GetType() == sample.GetType());
             }
 
-            lookup = elements
-                .Where(e => (e.Category?.Id.Value ?? 0) == categoryId)
-                .ToLookup(e => e.Name, e => e.Id, StringComparer.Ordinal);
-            _cache[key] = lookup;
-            return lookup;
+            index = Index(elements.Where(e => (e.Category?.Id.Value ?? 0) == categoryId));
+            _cache[key] = index;
+            return index;
         }
 
-        private ILookup<string, ElementId> ByClass(Type type)
+        private NameIndex ByClass(Type type)
         {
             var key = $"class:{type.FullName}";
-            if (!_cache.TryGetValue(key, out var lookup))
+            if (!_cache.TryGetValue(key, out var index))
             {
-                lookup = new FilteredElementCollector(_document).OfClass(type).ToElements()
-                    .ToLookup(e => e.Name, e => e.Id, StringComparer.Ordinal);
-                _cache[key] = lookup;
+                index = Index(new FilteredElementCollector(_document).OfClass(type).ToElements());
+                _cache[key] = index;
             }
 
-            return lookup;
+            return index;
         }
 
-        private ILookup<string, ElementId> ByCategory(BuiltInCategory category, bool types)
+        private NameIndex ByCategory(BuiltInCategory category, bool types)
         {
             var key = $"category:{(long)category}:{types}";
-            if (!_cache.TryGetValue(key, out var lookup))
+            if (!_cache.TryGetValue(key, out var index))
             {
                 var collector = new FilteredElementCollector(_document).OfCategory(category);
                 var elements = types ? collector.WhereElementIsElementType() : collector.WhereElementIsNotElementType();
-                lookup = elements.ToElements().ToLookup(e => e.Name, e => e.Id, StringComparer.Ordinal);
-                _cache[key] = lookup;
+                index = Index(elements.ToElements());
+                _cache[key] = index;
             }
 
-            return lookup;
+            return index;
         }
 
-        private ILookup<string, ElementId> ViewTemplates()
+        private NameIndex ViewTemplates()
         {
             const string key = "view-templates";
-            if (!_cache.TryGetValue(key, out var lookup))
+            if (!_cache.TryGetValue(key, out var index))
             {
-                lookup = new FilteredElementCollector(_document).OfClass(typeof(View)).Cast<View>()
-                    .Where(v => v.IsTemplate)
-                    .ToLookup(v => v.Name, v => v.Id, StringComparer.Ordinal);
-                _cache[key] = lookup;
+                index = Index(new FilteredElementCollector(_document).OfClass(typeof(View)).Cast<View>().Where(v => v.IsTemplate));
+                _cache[key] = index;
             }
 
-            return lookup;
+            return index;
+        }
+
+        private static NameIndex Index(IEnumerable<Element> elements)
+        {
+            var items = elements
+                .Select(e => (e.Id, Plain: e.Name, Qualified: e is ElementType t && !string.IsNullOrEmpty(t.FamilyName) ? $"{t.FamilyName}: {t.Name}" : null))
+                .ToList();
+
+            var lookup = items
+                .SelectMany(i => i.Qualified == null || i.Qualified == i.Plain
+                    ? new[] { (Key: i.Plain, i.Id) }
+                    : new[] { (Key: i.Plain, i.Id), (Key: i.Qualified, i.Id) })
+                .ToLookup(k => k.Key, k => k.Id, StringComparer.Ordinal);
+
+            var offered = items
+                .Select(i => lookup[i.Plain].Count() == 1 ? i.Plain : i.Qualified)
+                .Where(n => n != null && lookup[n].Count() == 1)
+                .Select(n => n!)
+                .Distinct(StringComparer.Ordinal)
+                .OrderBy(n => n, StringComparer.CurrentCultureIgnoreCase)
+                .ToList();
+
+            return new NameIndex(lookup, offered);
         }
 
         private static string Describe(Element element) =>

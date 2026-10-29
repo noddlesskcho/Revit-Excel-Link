@@ -21,7 +21,7 @@
     <RootNamespace>RevitScheduleSync</RootNamespace>
     <AssemblyName>RevitScheduleSync</AssemblyName>
 
-    <Version>1.2.1</Version>
+    <Version>1.2.2</Version>
     <!-- Build date and time in the product version (window footer, ribbon tooltip, file properties),
          so the newest installed build is obvious. The SDK appends "+<commit>" after it. -->
     <BuildStamp>$([System.DateTime]::Now.ToString('yyyy-MM-dd HH:mm'))</BuildStamp>
@@ -82,6 +82,7 @@
   <ItemGroup Condition="'$(TargetFramework)' == 'net48'">
     <!-- Built into .NET 8+; needed on .NET Framework (Revit 2024) for profile files. -->
     <PackageReference Include="System.Text.Json" Version="8.0.5" />
+    <Reference Include="System.Net.Http" />
   </ItemGroup>
 
   <!-- Development manifests: Revit 2026/2027 (isolated) and Revit 2024 (no isolation setting).

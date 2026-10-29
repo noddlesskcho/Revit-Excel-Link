@@ -38,6 +38,8 @@ namespace RevitScheduleSync.Commands
                     return Result.Cancelled;
                 }
 
+                UpdateNotice.ShowOnce();
+
                 var session = SessionInfo.Create(uiApplication.Application, document, AddinHost.FileLogger?.LogDirectory);
 
                 // Read schedules up front, in API context. The window is modal, so the model

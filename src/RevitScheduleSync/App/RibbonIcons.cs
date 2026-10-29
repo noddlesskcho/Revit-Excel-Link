@@ -49,5 +49,25 @@ namespace RevitScheduleSync.App
             bitmap.Freeze();
             return bitmap;
         }
+
+        /// <summary>Round "i" information icon for the About button.</summary>
+        public static BitmapSource CreateAbout(int size)
+        {
+            double s = size / 32.0;
+            var visual = new DrawingVisual();
+
+            using (var dc = visual.RenderOpen())
+            {
+                var accentBrush = new SolidColorBrush(Accent);
+                dc.DrawEllipse(accentBrush, null, new Point(16 * s, 16 * s), 14 * s, 14 * s);
+                dc.DrawEllipse(Brushes.White, null, new Point(16 * s, 9.5 * s), 2.2 * s, 2.2 * s);
+                dc.DrawRoundedRectangle(Brushes.White, null, new Rect(14 * s, 13.5 * s, 4 * s, 11 * s), 1 * s, 1 * s);
+            }
+
+            var bitmap = new RenderTargetBitmap(size, size, 96, 96, PixelFormats.Pbgra32);
+            bitmap.Render(visual);
+            bitmap.Freeze();
+            return bitmap;
+        }
     }
 }

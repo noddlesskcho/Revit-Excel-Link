@@ -1,0 +1,96 @@
+<Window x:Class="RevitScheduleSync.UI.Views.AboutWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="About Revit-Excel Link"
+        Width="560" SizeToContent="Height"
+        ResizeMode="NoResize"
+        WindowStartupLocation="CenterOwner"
+        ShowInTaskbar="False"
+        FontFamily="Segoe UI"
+        UseLayoutRounding="True"
+        TextOptions.TextFormattingMode="Display">
+
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="../Styles/Theme.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Window.Resources>
+
+    <Border Background="{StaticResource Brush.Window}" Padding="20">
+        <StackPanel>
+            <!-- Header -->
+            <DockPanel Margin="0,0,0,14">
+                <Image x:Name="Logo" Width="48" Height="48" Margin="0,0,14,0" DockPanel.Dock="Left" VerticalAlignment="Top" />
+                <StackPanel>
+                    <TextBlock Text="Revit-Excel Link" Style="{StaticResource Text.Title}" />
+                    <TextBlock Style="{StaticResource Text.Muted}" TextWrapping="Wrap" Margin="0,2,0,0"
+                               Text="Export Revit schedules and model data to Excel, edit them, and import reviewed changes back into the model." />
+                </StackPanel>
+            </DockPanel>
+
+            <!-- Version -->
+            <Border Style="{StaticResource Card}" Margin="0,0,0,10">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="110" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <TextBlock Grid.Row="0" Text="Version" Style="{StaticResource Text.Muted}" />
+                    <TextBlock Grid.Row="0" Grid.Column="1" x:Name="VersionText" Style="{StaticResource Text.Body}" FontWeight="SemiBold" />
+                    <TextBlock Grid.Row="1" Text="Running in" Style="{StaticResource Text.Muted}" Margin="0,4,0,0" />
+                    <TextBlock Grid.Row="1" Grid.Column="1" x:Name="HostText" Style="{StaticResource Text.Body}" Margin="0,4,0,0" TextWrapping="Wrap" />
+                    <TextBlock Grid.Row="2" Text="Installed in" Style="{StaticResource Text.Muted}" Margin="0,4,0,0" />
+                    <TextBlock Grid.Row="2" Grid.Column="1" x:Name="FolderText" Style="{StaticResource Text.Body}" Margin="0,4,0,0" TextWrapping="Wrap" />
+                    <TextBlock Grid.Row="3" Text="Updates" Style="{StaticResource Text.Muted}" Margin="0,4,0,0" />
+                    <StackPanel Grid.Row="3" Grid.Column="1" Orientation="Horizontal" Margin="0,4,0,0">
+                        <TextBlock x:Name="UpdateText" Style="{StaticResource Text.Body}" Text="Checking…" VerticalAlignment="Center" />
+                        <Button x:Name="DownloadButton" Content="Download" Style="{StaticResource Button.Link}" Margin="8,0,0,0"
+                                Visibility="Collapsed" Click="OnDownload" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- Support -->
+            <Border Style="{StaticResource Card}" Margin="0,0,0,10">
+                <StackPanel>
+                    <TextBlock Text="Problems or suggestions" Style="{StaticResource Text.Heading}" />
+                    <TextBlock Style="{StaticResource Text.Body}" TextWrapping="Wrap" Margin="0,4,0,8">
+                        <Run Text="Email" />
+                        <Hyperlink x:Name="EmailLink" Click="OnEmail"><Run Text="pynxsg@gmail.com" /></Hyperlink><Run Text=". Please include the diagnostics (button below) and, if possible, the log file." />
+                    </TextBlock>
+                    <WrapPanel>
+                        <Button Content="Email support" Style="{StaticResource Button.Primary}" Margin="0,0,8,0" Click="OnEmail" />
+                        <Button Content="Copy diagnostics" Style="{StaticResource Button.Secondary}" Margin="0,0,8,0" Click="OnCopyDiagnostics" />
+                        <Button Content="Open log folder" Style="{StaticResource Button.Secondary}" Click="OnOpenLogs" />
+                    </WrapPanel>
+                    <TextBlock x:Name="CopiedText" Style="{StaticResource Text.Muted}" Margin="0,6,0,0" Visibility="Collapsed"
+                               Text="Diagnostics copied. Paste them into your email." />
+                </StackPanel>
+            </Border>
+
+            <!-- Footer -->
+            <TextBlock Style="{StaticResource Text.Muted}" TextWrapping="Wrap" Margin="0,4,0,0">
+                <Run Text="Free to use. No licence or sign-in. Only checks GitHub for new versions; no model or usage data is sent." />
+                <LineBreak />
+                <Hyperlink Click="OnHelp"><Run Text="User guide" /></Hyperlink>
+                <Run Text="  ·  " />
+                <Hyperlink Click="OnWebsite"><Run Text="Project page" /></Hyperlink>
+                <Run Text="  ·  " />
+                <Hyperlink Click="OnNotices"><Run Text="Third-party notices" /></Hyperlink>
+                <LineBreak />
+                <Run Text="Autodesk and Revit are trademarks of Autodesk, Inc. Not produced or endorsed by Autodesk." />
+            </TextBlock>
+
+            <Button Content="Close" Style="{StaticResource Button.Secondary}" HorizontalAlignment="Right" Margin="0,14,0,0"
+                    IsCancel="True" IsDefault="True" Click="OnClose" />
+        </StackPanel>
+    </Border>
+</Window>

@@ -128,6 +128,20 @@ packaging/                       bundle manifest, add-in manifests, installers, 
 .github/workflows/release.yml    CI: tag push builds installers and publishes a GitHub release
 ```
 
+## Support
+
+For issues, contact **pynxsg@gmail.com**. The **About** button on the Revit-Excel Link tab has *Email support*
+(opens an email with version and Revit details), *Copy diagnostics* and *Open log folder*.
+
+## Updates
+
+At Revit startup the add-in reads `https://github.com/noddlesskcho/Revit-Excel-Link/releases/latest` in the
+background (it follows nothing else and sends no model or user data). When a newer release exists, opening
+Revit-Excel Link shows a one-time notice with a link to the download page, and the About window shows
+*Download*. Users close Revit and run the new installer, which replaces the old version.
+
+To publish an update: bump `<Version>`, commit, push a `v<version>` tag (see *GitHub release*).
+
 ## Logs and reports
 
 `%LOCALAPPDATA%\RevitScheduleSync\Logs` (kept 30 days) and `%LOCALAPPDATA%\RevitScheduleSync\Reports`.

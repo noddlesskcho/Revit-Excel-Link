@@ -13,4 +13,9 @@ Installs for the current Windows user only, no administrator rights needed, to:
 
 To remove: close Revit, double-click Uninstall.cmd.
 
+For issues, contact pynxsg@gmail.com (About button > Email support adds the version details).
+
+New versions: the add-in tells you when one is available. Close Revit and run the new installer;
+it replaces the old version.
+
 Help and source: https://github.com/noddlesskcho/Revit-Excel-Link

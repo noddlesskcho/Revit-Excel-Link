@@ -40,7 +40,21 @@ namespace RevitScheduleSync.App
             };
 
             panel.AddItem(buttonData);
-            logger.Info($"Ribbon panel created (command: {entry.CommandClass}).");
+
+            var help = application.CreateRibbonPanel(PluginInfo.RibbonTabName, PluginInfo.InfoPanelName);
+            help.AddItem(new PushButtonData(
+                PluginInfo.AboutButtonName,
+                PluginInfo.AboutButtonText,
+                entry.AssemblyPath,
+                entry.AboutCommandClass)
+            {
+                ToolTip = "Version, updates and support contact (" + PluginInfo.SupportEmail + ").",
+                AvailabilityClassName = entry.AlwaysAvailableClass,
+                LargeImage = RibbonIcons.CreateAbout(32),
+                Image = RibbonIcons.CreateAbout(16)
+            });
+
+            logger.Info($"Ribbon panels created (command: {entry.CommandClass}).");
         }
     }
 }

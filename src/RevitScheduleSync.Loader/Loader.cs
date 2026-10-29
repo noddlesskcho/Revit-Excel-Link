@@ -35,11 +35,15 @@ namespace RevitScheduleSync.Loader
                 var context = new IsolatedLoadContext(corePath);
                 Core = context.LoadFromAssemblyPath(corePath);
 
-                // Route the ribbon button and availability check through this assembly's proxies,
+                // Route the ribbon buttons and availability checks through this assembly's proxies,
                 // so Revit never loads RevitScheduleSync.dll a second time in its own context.
                 Core.GetType("RevitScheduleSync.App.AddinHost", throwOnError: true)!
                     .GetMethod("UseEntryPoints", BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public)!
-                    .Invoke(null, [typeof(LoaderApplication).Assembly.Location, typeof(LoaderCommand).FullName!, typeof(LoaderAvailability).FullName!]);
+                    .Invoke(null,
+                    [
+                        typeof(LoaderApplication).Assembly.Location, typeof(LoaderCommand).FullName!, typeof(LoaderAvailability).FullName!,
+                        typeof(LoaderAboutCommand).FullName!, typeof(LoaderAlwaysAvailable).FullName!
+                    ]);
 
                 // IExternalApplication comes from RevitAPIUI, which the private context shares with Revit.
                 _core = (IExternalApplication)Activator.CreateInstance(
@@ -90,6 +94,33 @@ namespace RevitScheduleSync.Loader
                 return Result.Failed;
             }
         }
+    }
+
+    /// <summary>About button proxy.</summary>
+    [Transaction(TransactionMode.ReadOnly)]
+    [Regeneration(RegenerationOption.Manual)]
+    public sealed class LoaderAboutCommand : IExternalCommand
+    {
+        public Result Execute(ExternalCommandData commandData, ref string message, ElementSet elements)
+        {
+            try
+            {
+                return LoaderApplication.CreateCore<IExternalCommand>("RevitScheduleSync.Commands.AboutCommand")
+                    .Execute(commandData, ref message, elements);
+            }
+            catch (Exception ex)
+            {
+                LoaderLog.Write("About failed to start: " + ex);
+                message = "Revit-Excel Link could not start. See %LOCALAPPDATA%\\RevitScheduleSync\\Logs\\loader.log.";
+                return Result.Failed;
+            }
+        }
+    }
+
+    /// <summary>Keeps the About button enabled, also when no document is open.</summary>
+    public sealed class LoaderAlwaysAvailable : IExternalCommandAvailability
+    {
+        public bool IsCommandAvailable(UIApplication applicationData, CategorySet selectedCategories) => true;
     }
 
     /// <summary>Availability proxy: enabled only for project documents (decided by the core).</summary>

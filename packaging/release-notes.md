@@ -14,3 +14,7 @@ button tooltip show the version with its build date and time.
 
 The setup program is not code-signed, so Windows SmartScreen may show "Windows protected your PC".
 Click **More info** > **Run anyway**, or use the zip.
+
+To update later, close Revit and run the new installer: it replaces the old version.
+
+For issues, contact **pynxsg@gmail.com** (About button > Email support adds the version details).

@@ -28,6 +28,9 @@ namespace RevitScheduleSync.App
                 logger.DeleteOldLogs();
                 RibbonBuilder.Build(application, logger);
 
+                // Background, network only: never delays or blocks Revit startup.
+                Services.UpdateChecker.Start(logger);
+
                 logger.Info("Startup complete.");
                 return Result.Succeeded;
             }

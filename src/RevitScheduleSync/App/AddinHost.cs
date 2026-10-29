@@ -3,8 +3,13 @@ using RevitScheduleSync.Logging;
 
 namespace RevitScheduleSync.App
 {
-    /// <summary>Assembly and classes Revit must call for the ribbon button and its availability check.</summary>
-    internal sealed record EntryPoints(string AssemblyPath, string CommandClass, string AvailabilityClass);
+    /// <summary>Assembly and classes Revit must call for the ribbon buttons and their availability checks.</summary>
+    internal sealed record EntryPoints(
+        string AssemblyPath,
+        string CommandClass,
+        string AvailabilityClass,
+        string AboutCommandClass,
+        string AlwaysAvailableClass);
 
     /// <summary>
     /// The single shared entry point for add-in services.
@@ -19,20 +24,23 @@ namespace RevitScheduleSync.App
         public static ILogger Logger => (ILogger?)FileLogger ?? NullLogger.Instance;
 
         /// <summary>
-        /// Revit 2026: this assembly's own command classes. Revit 2025: the loader's proxy classes, so Revit
+        /// Revit 2024/2026/2027: this assembly's own command classes. Revit 2025: the loader's proxy classes, so Revit
         /// never loads a second copy of this assembly outside the private load context.
         /// </summary>
         public static EntryPoints Entry { get; private set; } = new(
             typeof(OpenScheduleSyncCommand).Assembly.Location,
             typeof(OpenScheduleSyncCommand).FullName!,
-            typeof(ProjectDocumentAvailability).FullName!);
+            typeof(ProjectDocumentAvailability).FullName!,
+            typeof(AboutCommand).FullName!,
+            typeof(AlwaysAvailable).FullName!);
 
         internal static void Initialize(FileLogger logger) => FileLogger = logger;
 
         internal static void Shutdown() => FileLogger = null;
 
         /// <summary>Called by RevitScheduleSync.Loader (via reflection) before OnStartup.</summary>
-        internal static void UseEntryPoints(string assemblyPath, string commandClass, string availabilityClass) =>
-            Entry = new EntryPoints(assemblyPath, commandClass, availabilityClass);
+        internal static void UseEntryPoints(
+            string assemblyPath, string commandClass, string availabilityClass, string aboutCommandClass, string alwaysAvailableClass) =>
+            Entry = new EntryPoints(assemblyPath, commandClass, availabilityClass, aboutCommandClass, alwaysAvailableClass);
     }
 }

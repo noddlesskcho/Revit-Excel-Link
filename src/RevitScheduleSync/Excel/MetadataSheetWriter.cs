@@ -71,7 +71,7 @@ namespace RevitScheduleSync.Excel
                     var p = f.Parameter;
                     columns.Add(
                     [
-                        name, Text(WorkbookSchema.FirstFieldColumn + c), Text(f.FieldId), Text(f.FieldIndex), f.Heading,
+                        name, Text(WorkbookSchema.FirstFieldColumn + c), Text(f.FieldId), Text(f.FieldIndex), column.HeaderText,
                         f.FieldType, p.Key, p.Source.ToString(), p.Name, p.BuiltInName ?? string.Empty,
                         p.BuiltInValue.HasValue ? Text(p.BuiltInValue.Value) : string.Empty,
                         p.SharedGuid?.ToString("D") ?? string.Empty,

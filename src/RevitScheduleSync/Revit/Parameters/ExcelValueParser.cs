@@ -4,6 +4,7 @@ using Autodesk.Revit.DB;
 using RevitScheduleSync.Models;
 using RevitScheduleSync.Models.Export;
 using RevitScheduleSync.Models.Import;
+using RevitScheduleSync.Sync;
 
 namespace RevitScheduleSync.Revit.Parameters
 {
@@ -71,8 +72,13 @@ namespace RevitScheduleSync.Revit.Parameters
             {
                 exportValue = value.Number.Value;
             }
-            else if (TryParseDouble(value.Text, out var typed))
+            else if (TryParseDouble(value.Text, out var typed, out var ambiguous) || ambiguous)
             {
+                if (ambiguous)
+                {
+                    return ParsedValue.Invalid(value.Text, AmbiguousMessage);
+                }
+
                 exportValue = typed;
             }
             else if (!string.IsNullOrEmpty(column.SpecTypeId) && unit != null
@@ -111,9 +117,9 @@ namespace RevitScheduleSync.Revit.Parameters
             {
                 number = value.Number.Value;
             }
-            else if (!TryParseDouble(value.Text, out number))
+            else if (!TryParseDouble(value.Text, out number, out var ambiguous))
             {
-                return ParsedValue.Invalid(value.Text, "Not a valid whole number.");
+                return ParsedValue.Invalid(value.Text, ambiguous ? AmbiguousMessage : "Not a valid whole number.");
             }
 
             if (Math.Abs(number - Math.Round(number)) > 1e-9 || number < int.MinValue || number > int.MaxValue)
@@ -158,8 +164,15 @@ namespace RevitScheduleSync.Revit.Parameters
             return new ParsedValue(name, name, null, null);
         }
 
-        private static bool TryParseDouble(string text, out double value) =>
-            double.TryParse(text, NumberStyles.Float, CultureInfo.CurrentCulture, out value)
-            || double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out value);
+        private const string AmbiguousMessage =
+            "Ambiguous number: the separator could mean thousands or decimals. Type it without a thousands separator (e.g. 1234 or 1.5).";
+
+        /// <summary>Number typed as text; see <see cref="NumberText"/>.</summary>
+        private static bool TryParseDouble(string text, out double value, out bool ambiguous)
+        {
+            var result = NumberText.TryParse(text, CultureInfo.CurrentCulture, out value);
+            ambiguous = result == NumberText.Result.Ambiguous;
+            return result == NumberText.Result.Parsed;
+        }
     }
 }

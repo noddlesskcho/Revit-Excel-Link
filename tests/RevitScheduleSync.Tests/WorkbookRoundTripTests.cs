@@ -63,6 +63,17 @@ namespace RevitScheduleSync.Tests
         }
 
         [Fact]
+        public void Header_shows_the_unit_and_plain_headers_have_none()
+        {
+            var path = TestWorkbooks.Write(TestWorkbooks.Doors(rows: 1));
+
+            using var book = new XLWorkbook(path);
+            var headers = book.Worksheet("Door Schedule").Row(WorkbookSchema.HeaderRow).CellsUsed().Select(c => c.GetString()).ToList();
+            Assert.Contains("Width [Millimeters]", headers);
+            Assert.Contains("Mark", headers);
+        }
+
+        [Fact]
         public void Inserted_column_is_found_by_heading()
         {
             var path = TestWorkbooks.Write(TestWorkbooks.Doors(rows: 3));

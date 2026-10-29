@@ -45,7 +45,7 @@ No geometry (XYZ, locations, coordinates) is exported.
 | Families sheet | none: names and `{count}` |
 | Info columns (Element ID, Family, Type, Phase, Category) | none: text, never imported (Phase is resolved by name) |
 
-The unit label is in the header comment (`Unit: ...`) and the validation message, not in the header text.
+The header text shows the unit: `Length [mm]` (symbol when the unit has one, else its label), also stored as the column heading in the metadata so moved columns are still found. Workbooks from 1.2.2 and earlier have headings without the unit and still import. The header comment and the validation message also name the unit.
 
 ## Files with unit boundaries
 
@@ -62,5 +62,26 @@ The unit label is in the header comment (`Unit: ...`) and the validation message
 ## Audit 2026-10-29: open findings
 
 1. ~~**High**: model data column with no sample parameter gets no export unit~~. Fixed: catalog spec fallback, unit-less numbers locked.
-2. **Medium**: unit only in the header comment; composite units silently become decimal.
-3. **Medium**: text-cell numbers use CurrentCulture then InvariantCulture (`ExcelValueParser.TryParseDouble`).
+2. ~~**Medium**: unit only in the header comment~~. Fixed: unit in the header text (`ExportColumn.HeaderText`).
+3. ~~**Medium**: text-cell numbers use CurrentCulture then InvariantCulture~~. Fixed: `Sync/NumberText` refuses "1.234" / "12,345" (could be thousands or decimals) with a clear message, reads a decimal comma only where the locale uses one, and everything else the invariant way.
+
+## Re-audit 2026-10-29 (after commits b96b67e, c21d96a)
+
+No new findings. Changes since the first audit touch no numeric values (workbook read into memory, Phase cells locked,
+assembly resolver, ribbon fallback, "Family: Type" reference names); the model-data unit fallback (finding 1) is in place.
+
+Checked and correct:
+- Project units changed between export and import (e.g. mm to m): import converts with the `ExportUnitTypeId` stored
+  in the workbook, and reads the current Revit value with the same unit, so the old export unit is honoured.
+- Schedule field with its own format (`UseDefault = false`): display text and export unit both come from the field's
+  format.
+- Excel keeps 15 significant digits: a value exported at full precision (e.g. 2999.9999999999995 mm) and re-saved by
+  Excel as 3000 differs by about 2e-16 relative, inside `ValueComparer`'s 1e-9 tolerance, so it is not a change.
+- `ValueComparer` parses stored normalised numbers with InvariantCulture only, so the comparison does not depend on
+  the Windows locale.
+- New rooms/spaces: entered values are parsed with the column's export unit, like edits to existing rows.
+- Combined-parameter schedule fields (`ScheduleExportBuilder.ReadCombined`) export display text
+  (`AsValueString` with project units, not the field's own format). The column is read-only and the text is never
+  parsed, so this affects presentation only.
+
+Findings 2 and 3 fixed after this re-audit; covered by `NumberTextTests` and `WorkbookRoundTripTests.Header_shows_the_unit_and_plain_headers_have_none` (58/58 pass).

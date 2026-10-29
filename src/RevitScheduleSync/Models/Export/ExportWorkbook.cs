@@ -119,6 +119,23 @@ namespace RevitScheduleSync.Models.Export
 
         public string ExportUnitLabel { get; init; } = string.Empty;
 
+        /// <summary>Short unit symbol ("mm", "m²"), or empty when the unit has none.</summary>
+        public string ExportUnitSymbol { get; init; } = string.Empty;
+
+        /// <summary>
+        /// Text of the Excel header cell: the heading plus the unit, e.g. "Length [mm]", so the unit is visible
+        /// without opening the header comment. Also stored as the column heading in the metadata, which is how a
+        /// moved column is found again on import.
+        /// </summary>
+        public string HeaderText
+        {
+            get
+            {
+                var unit = ExportUnitSymbol.Length > 0 ? ExportUnitSymbol : ExportUnitLabel;
+                return unit.Length > 0 ? $"{Field.Heading} [{unit}]" : Field.Heading;
+            }
+        }
+
         /// <summary>Excel number format, or null for General/text.</summary>
         public string? NumberFormat { get; init; }
 

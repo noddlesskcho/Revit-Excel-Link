@@ -57,7 +57,7 @@ namespace RevitScheduleSync.Excel
                 int excelColumn = WorkbookSchema.FirstFieldColumn + c;
 
                 var header = ws.Cell(WorkbookSchema.HeaderRow, excelColumn);
-                header.Value = column.Field.Heading;
+                header.Value = column.HeaderText;
                 header.CreateComment().AddText(BuildHeaderComment(column));
                 StyleHeader(header, column);
 

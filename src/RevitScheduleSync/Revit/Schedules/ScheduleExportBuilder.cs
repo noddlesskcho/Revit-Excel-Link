@@ -377,7 +377,7 @@ namespace RevitScheduleSync.Revit.Schedules
                 reason = "Enumerated value: read-only in V1.";
             }
 
-            string unitId = string.Empty, unitLabel = string.Empty;
+            string unitId = string.Empty, unitLabel = string.Empty, unitSymbol = string.Empty;
             string? numberFormat = kind == CellKind.Integer ? "0" : null;
 
             if (kind == CellKind.Number && field.IsMeasurable && !string.IsNullOrEmpty(field.DisplayUnitTypeId))
@@ -386,6 +386,7 @@ namespace RevitScheduleSync.Revit.Schedules
                 var unit = replaced ? decimalUnit! : new ForgeTypeId(field.DisplayUnitTypeId);
                 unitId = unit.TypeId;
                 unitLabel = SafeUnitLabel(unit);
+                unitSymbol = SafeUnitSymbol(unit);
                 numberFormat = DecimalFormat(replaced ? 4 : DecimalsFor(field.DisplayAccuracy));
             }
 
@@ -397,6 +398,7 @@ namespace RevitScheduleSync.Revit.Schedules
                 ReadOnlyReason = reason,
                 ExportUnitTypeId = unitId,
                 ExportUnitLabel = unitLabel,
+                ExportUnitSymbol = unitSymbol,
                 NumberFormat = numberFormat
             };
         }
@@ -512,6 +514,27 @@ namespace RevitScheduleSync.Revit.Schedules
         }
 
         private static string DecimalFormat(int decimals) => decimals == 0 ? "0" : "0." + new string('0', decimals);
+
+        /// <summary>The unit's first symbol ("mm"), or empty when it has none.</summary>
+        private static string SafeUnitSymbol(ForgeTypeId unit)
+        {
+            try
+            {
+                foreach (var symbol in FormatOptions.GetValidSymbols(unit))
+                {
+                    if (!symbol.Empty())
+                    {
+                        return LabelUtils.GetLabelForSymbol(symbol);
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                // Units without symbols: the label is used instead.
+            }
+
+            return string.Empty;
+        }
 
         private static string SafeUnitLabel(ForgeTypeId unit)
         {

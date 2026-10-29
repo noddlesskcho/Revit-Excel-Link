@@ -1,14 +1,17 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!--
-    Revit-Excel Link - add-in core, built once per supported Revit version:
-      net10.0-windows -> Revit 2026 (Revit 2026.5 hosts .NET 10; loaded directly, isolated by Revit via UseRevitContext=False)
-      net8.0-windows  -> Revit 2025 (Revit 2025 hosts .NET 8; loaded through RevitScheduleSync.Loader into a private
-                         AssemblyLoadContext, because Revit 2025 has no add-in isolation)
-    x64 only.
+    Revit-Excel Link - add-in core, built once per supported Revit version (-p:RevitVersion=...):
+      2024 -> net48           (Revit 2024 hosts .NET Framework 4.8; loaded directly)
+      2025 -> net8.0-windows  (loaded through RevitScheduleSync.Loader into a private AssemblyLoadContext,
+                               because Revit 2025 has no add-in isolation)
+      2026 -> net8.0-windows  (loaded directly, isolated by Revit via UseRevitContext=False;
+                               also runs on Revit 2026 updates that host .NET 10)
+      2027 -> net10.0-windows (loaded directly, isolated by Revit via UseRevitContext=False)
+    Revit API assemblies come from the Nice3point.Revit.Api reference packages, so no Revit install is
+    needed to build (CI included). x64 only.
   -->
   <PropertyGroup>
-    <TargetFrameworks>net8.0-windows;net10.0-windows</TargetFrameworks>
     <UseWPF>true</UseWPF>
     <PlatformTarget>x64</PlatformTarget>
     <Platforms>x64</Platforms>
@@ -18,7 +21,7 @@
     <RootNamespace>RevitScheduleSync</RootNamespace>
     <AssemblyName>RevitScheduleSync</AssemblyName>
 
-    <Version>1.1.0</Version>
+    <Version>1.2.0</Version>
     <!-- Build date and time in the product version (window footer, ribbon tooltip, file properties),
          so the newest installed build is obvious. The SDK appends "+<commit>" after it. -->
     <BuildStamp>$([System.DateTime]::Now.ToString('yyyy-MM-dd HH:mm'))</BuildStamp>
@@ -27,7 +30,7 @@
     <Company>Revit-Excel Link</Company>
 
     <!-- Plugin-style output: copy NuGet dependencies next to the add-in DLL and emit a .deps.json
-         so the add-in load context (Revit 2026, or our loader in 2025) can resolve ClosedXML and its dependencies. -->
+         so the add-in load context (Revit 2026/2027, or our loader in 2025) can resolve ClosedXML and its dependencies. -->
     <EnableDynamicLoading>true</EnableDynamicLoading>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
@@ -42,62 +45,68 @@
     <DeployToRevit Condition="'$(DeployToRevit)' == '' and '$(Configuration)' == 'Debug'">true</DeployToRevit>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(TargetFramework)' == 'net8.0-windows'">
-    <RevitVersion>2025</RevitVersion>
-    <DefineConstants>$(DefineConstants);REVIT2025</DefineConstants>
+  <PropertyGroup Condition="'$(RevitVersion)' == '2024'">
+    <TargetFramework>net48</TargetFramework>
+    <!-- .NET Framework APIs (Path, File, ...) carry no nullable annotations; these warnings are noise there. -->
+    <NoWarn>$(NoWarn);CS8600;CS8601;CS8602;CS8603;CS8604</NoWarn>
+    <RevitApiPackageVersion>2024.0.0</RevitApiPackageVersion>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(TargetFramework)' == 'net10.0-windows'">
-    <RevitVersion>2026</RevitVersion>
-    <DefineConstants>$(DefineConstants);REVIT2026</DefineConstants>
+  <PropertyGroup Condition="'$(RevitVersion)' == '2025'">
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <RevitApiPackageVersion>2025.4.60</RevitApiPackageVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(RevitVersion)' == '2026'">
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <RevitApiPackageVersion>2026.0.4</RevitApiPackageVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(RevitVersion)' == '2027'">
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <RevitApiPackageVersion>2027.0.0</RevitApiPackageVersion>
   </PropertyGroup>
   <PropertyGroup>
-    <RevitInstallDir>C:\Program Files\Autodesk\Revit $(RevitVersion)\</RevitInstallDir>
-    <RevitInstallDir Condition="'$(RevitInstallDir2025)' != '' and '$(RevitVersion)' == '2025'">$(RevitInstallDir2025)</RevitInstallDir>
-    <RevitInstallDir Condition="'$(RevitInstallDir2026)' != '' and '$(RevitVersion)' == '2026'">$(RevitInstallDir2026)</RevitInstallDir>
+    <DefineConstants>$(DefineConstants);REVIT$(RevitVersion)</DefineConstants>
     <RevitAddinsDir>$(APPDATA)\Autodesk\Revit\Addins\$(RevitVersion)\</RevitAddinsDir>
   </PropertyGroup>
 
-  <ItemGroup>
-    <!-- Revit API assemblies are supplied by Revit at runtime: never copy them to the output. -->
-    <Reference Include="RevitAPI">
-      <HintPath>$(RevitInstallDir)RevitAPI.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="RevitAPIUI">
-      <HintPath>$(RevitInstallDir)RevitAPIUI.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-  </ItemGroup>
+  <Target Name="CheckRevitVersion" BeforeTargets="Restore;CollectPackageReferences;Build">
+    <Error Condition="'$(RevitApiPackageVersion)' == ''"
+           Text="Unsupported RevitVersion '$(RevitVersion)'. Use 2024, 2025, 2026 or 2027." />
+  </Target>
 
   <ItemGroup>
+    <!-- Revit API assemblies are supplied by Revit at runtime: compile against them only, never copy them. -->
+    <PackageReference Include="Nice3point.Revit.Api.RevitAPI" Version="$(RevitApiPackageVersion)" ExcludeAssets="runtime" PrivateAssets="all" />
+    <PackageReference Include="Nice3point.Revit.Api.RevitAPIUI" Version="$(RevitApiPackageVersion)" ExcludeAssets="runtime" PrivateAssets="all" />
     <PackageReference Include="ClosedXML" Version="0.105.1" />
   </ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'net48'">
+    <!-- Built into .NET 8+; needed on .NET Framework (Revit 2024) for profile files. -->
+    <PackageReference Include="System.Text.Json" Version="8.0.5" />
+  </ItemGroup>
 
-  <!-- Development manifest, Revit 2026 only (Revit 2025 uses the loader's manifest). -->
-  <ItemGroup Condition="'$(RevitVersion)' == '2026'">
-    <None Update="RevitScheduleSync.addin">
+  <!-- Development manifests: Revit 2026/2027 (isolated) and Revit 2024 (no isolation setting).
+       Revit 2025 uses the loader's manifest. -->
+  <ItemGroup>
+    <None Remove="RevitScheduleSync.addin;RevitScheduleSync2024.addin" />
+    <None Include="RevitScheduleSync.addin" Condition="'$(RevitVersion)' == '2026' or '$(RevitVersion)' == '2027'">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="RevitScheduleSync2024.addin" Condition="'$(RevitVersion)' == '2024'">
+      <Link>RevitScheduleSync.addin</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
-  <ItemGroup Condition="'$(RevitVersion)' != '2026'">
-    <None Remove="RevitScheduleSync.addin" />
-  </ItemGroup>
-
-  <Target Name="CheckRevitInstall" BeforeTargets="ResolveAssemblyReferences" Condition="'$(TargetFramework)' != ''">
-    <Error Condition="!Exists('$(RevitInstallDir)RevitAPI.dll')"
-           Text="RevitAPI.dll not found in '$(RevitInstallDir)'. Install Revit $(RevitVersion) or pass -p:RevitInstallDir$(RevitVersion)=&lt;folder&gt;\" />
-  </Target>
 
   <!--
     Deploy layout:
-      Revit 2026: Addins\2026\RevitScheduleSync.addin + Addins\2026\RevitScheduleSync\RevitScheduleSync.dll (+ dependencies)
+      Revit 2024/2026/2027: Addins\<year>\RevitScheduleSync.addin + Addins\<year>\RevitScheduleSync\RevitScheduleSync.dll (+ dependencies)
       Revit 2025: Addins\2025\RevitScheduleSync\core\RevitScheduleSync.dll (+ dependencies);
                   the manifest and loader DLL are deployed by RevitScheduleSync.Loader.
     Fails with a warning (not an error) when Revit is running and holds the DLL open.
   -->
   <Target Name="DeployToRevitAddins" AfterTargets="Build" Condition="'$(DeployToRevit)' == 'true' and '$(TargetFramework)' != ''">
     <PropertyGroup>
-      <_DeployFolder Condition="'$(RevitVersion)' == '2026'">$(RevitAddinsDir)RevitScheduleSync\</_DeployFolder>
+      <_DeployFolder>$(RevitAddinsDir)RevitScheduleSync\</_DeployFolder>
       <_DeployFolder Condition="'$(RevitVersion)' == '2025'">$(RevitAddinsDir)RevitScheduleSync\core\</_DeployFolder>
     </PropertyGroup>
     <ItemGroup>
@@ -112,13 +121,13 @@
       <_DeployFilesOk>$(MSBuildLastTaskResult)</_DeployFilesOk>
       <_DeployManifestOk>true</_DeployManifestOk>
     </PropertyGroup>
-    <Copy Condition="'$(RevitVersion)' == '2026'"
+    <Copy Condition="'$(RevitVersion)' != '2025'"
           SourceFiles="$(OutDir)RevitScheduleSync.addin"
           DestinationFolder="$(RevitAddinsDir)"
           SkipUnchangedFiles="true"
           Retries="0"
           ContinueOnError="WarnAndContinue" />
-    <PropertyGroup Condition="'$(RevitVersion)' == '2026'">
+    <PropertyGroup Condition="'$(RevitVersion)' != '2025'">
       <_DeployManifestOk>$(MSBuildLastTaskResult)</_DeployManifestOk>
     </PropertyGroup>
     <Message Condition="'$(_DeployFilesOk)' == 'true' and '$(_DeployManifestOk)' == 'true'"

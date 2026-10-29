@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Autodesk App Store bundle manifest (template). build-package.ps1 replaces $VERSION$.
-  ProductCode / UpgradeCode: keep UpgradeCode fixed for all future versions; ProductCode may change per release.
-  Publisher details are placeholders until confirmed (see docs/app-store-listing.md).
+  Autodesk bundle manifest (template). build-package.ps1 replaces $VERSION$.
+  Revit loads the bundle from %APPDATA%\Autodesk\ApplicationPlugins (per user) and picks the component
+  that matches its own version.
+  UpgradeCode: keep fixed for all future versions; ProductCode may change per release.
 -->
 <ApplicationPackage SchemaVersion="1.0"
                     AutodeskProduct="Revit"
@@ -10,29 +11,42 @@
                     Name="Revit-Excel Link"
                     AppVersion="$VERSION$"
                     FriendlyVersion="$VERSION$"
-                    Description="Export Revit schedules to Excel, edit them, and import reviewed changes back safely with three-way comparison."
-                    Author="[Publisher name]"
+                    Description="Export Revit schedules and model data to Excel, edit them, and import reviewed changes back safely with three-way comparison."
+                    Author="noddlesskcho"
                     Icon=".\Contents\Resources\icon-64.png"
                     HelpFile=".\Contents\Resources\help.html"
-                    OnlineDocumentation=".\Contents\Resources\help.html"
-                    AppNameSpace="appstore.exchange.autodesk.com"
+                    OnlineDocumentation="https://github.com/noddlesskcho/Revit-Excel-Link"
                     ProductCode="{4F53DE9E-5BD1-409D-B6F1-24213E314AA5}"
                     UpgradeCode="{FBB76A76-F19C-4D34-A639-12D06EF166CE}"
                     SupportedLocales="Enu">
-  <CompanyDetails Name="[Publisher name]" Url="[Support URL]" Email="[Support email]" />
-  <RuntimeRequirements OS="Win64" Platform="Revit" SeriesMin="R2025" SeriesMax="R2026" />
+  <CompanyDetails Name="noddlesskcho" Url="https://github.com/noddlesskcho/Revit-Excel-Link" />
+  <RuntimeRequirements OS="Win64" Platform="Revit" SeriesMin="R2024" SeriesMax="R2027" />
+  <Components Description="Revit 2024">
+    <RuntimeRequirements OS="Win64" Platform="Revit" SeriesMin="R2024" SeriesMax="R2024" />
+    <ComponentEntry AppName="Revit-Excel Link"
+                    Version="$VERSION$"
+                    AppDescription="Excel export and reviewed import for Revit 2024."
+                    ModuleName=".\Contents\2024\RevitExcelLink.addin" />
+  </Components>
   <Components Description="Revit 2025">
     <RuntimeRequirements OS="Win64" Platform="Revit" SeriesMin="R2025" SeriesMax="R2025" />
     <ComponentEntry AppName="Revit-Excel Link"
                     Version="$VERSION$"
-                    AppDescription="Schedule to Excel export and reviewed import for Revit 2025."
-                    ModuleName=".\Contents\2025\ScheduleSync.addin" />
+                    AppDescription="Excel export and reviewed import for Revit 2025."
+                    ModuleName=".\Contents\2025\RevitExcelLink.addin" />
   </Components>
   <Components Description="Revit 2026">
     <RuntimeRequirements OS="Win64" Platform="Revit" SeriesMin="R2026" SeriesMax="R2026" />
     <ComponentEntry AppName="Revit-Excel Link"
                     Version="$VERSION$"
-                    AppDescription="Schedule to Excel export and reviewed import for Revit 2026."
-                    ModuleName=".\Contents\2026\ScheduleSync.addin" />
+                    AppDescription="Excel export and reviewed import for Revit 2026."
+                    ModuleName=".\Contents\2026\RevitExcelLink.addin" />
+  </Components>
+  <Components Description="Revit 2027">
+    <RuntimeRequirements OS="Win64" Platform="Revit" SeriesMin="R2027" SeriesMax="R2027" />
+    <ComponentEntry AppName="Revit-Excel Link"
+                    Version="$VERSION$"
+                    AppDescription="Excel export and reviewed import for Revit 2027."
+                    ModuleName=".\Contents\2027\RevitExcelLink.addin" />
   </Components>
 </ApplicationPackage>

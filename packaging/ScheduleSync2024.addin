@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Revit 2024 add-in manifest inside the bundle (Contents\2024\). The DLL sits next to this file.
+     Revit 2024 has no add-in isolation setting. Same AddInId as the development manifests: do not install both. -->
+<RevitAddIns>
+  <AddIn Type="Application">
+    <Name>Revit-Excel Link</Name>
+    <Assembly>RevitScheduleSync.dll</Assembly>
+    <AddInId>5afc7788-f203-4ec5-bf1b-d05b2042fe37</AddInId>
+    <FullClassName>RevitScheduleSync.App.ScheduleSyncApplication</FullClassName>
+    <VendorId>RSSY</VendorId>
+    <VendorDescription>Revit-Excel Link - safe schedule to Excel synchronisation</VendorDescription>
+  </AddIn>
+</RevitAddIns>

@@ -10,6 +10,8 @@ DocumentFormat.OpenXml.Framework 3.1.1 MIT License        https://github.com/dot
 ExcelNumberFormat 1.1.0               MIT License         https://github.com/andersnm/ExcelNumberFormat
 RBush (RBush.Signed)                  MIT License         https://github.com/viceroypenguin/RBush
 SixLabors.Fonts 1.0.0                 Apache License 2.0  https://github.com/SixLabors/Fonts
+System.Text.Json and other Microsoft  MIT License         https://github.com/dotnet/runtime
+  .NET support packages (Revit 2024 build only)
 
 MIT License (summary): permission is granted, free of charge, to use, copy, modify, merge,
 publish, distribute, sublicense and/or sell copies of the software, provided the copyright

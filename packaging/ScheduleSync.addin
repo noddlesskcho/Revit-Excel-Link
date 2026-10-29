@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Add-in manifest used inside the App Store bundle (Contents\2026\). The DLL sits next to this file.
+<!-- Add-in manifest used inside the bundle (Contents\2026\ and Contents\2027\). The DLL sits next to this file.
      Same AddInId as the development manifest: do not install both at once. -->
 <RevitAddIns>
   <AddIn Type="Application">

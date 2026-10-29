@@ -16,7 +16,7 @@
     <LangVersion>latest</LangVersion>
     <RootNamespace>RevitScheduleSync.Loader</RootNamespace>
     <AssemblyName>RevitScheduleSync.Loader</AssemblyName>
-    <Version>1.1.0</Version>
+    <Version>1.2.0</Version>
     <!-- Build date and time in the product version (window footer, ribbon tooltip, file properties),
          so the newest installed build is obvious. The SDK appends "+<commit>" after it. -->
     <BuildStamp>$([System.DateTime]::Now.ToString('yyyy-MM-dd HH:mm'))</BuildStamp>
@@ -26,21 +26,14 @@
     <MSBuildWarningsAsMessages>$(MSBuildWarningsAsMessages);MSB3277</MSBuildWarningsAsMessages>
     <GenerateDependencyFile>false</GenerateDependencyFile>
 
-    <RevitInstallDir>C:\Program Files\Autodesk\Revit 2025\</RevitInstallDir>
-    <RevitInstallDir Condition="'$(RevitInstallDir2025)' != ''">$(RevitInstallDir2025)</RevitInstallDir>
     <RevitAddinsDir>$(APPDATA)\Autodesk\Revit\Addins\2025\</RevitAddinsDir>
     <DeployToRevit Condition="'$(DeployToRevit)' == '' and '$(Configuration)' == 'Debug'">true</DeployToRevit>
   </PropertyGroup>
 
   <ItemGroup>
-    <Reference Include="RevitAPI">
-      <HintPath>$(RevitInstallDir)RevitAPI.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="RevitAPIUI">
-      <HintPath>$(RevitInstallDir)RevitAPIUI.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
+    <!-- Compile against the Revit 2025 API only; Revit supplies it at runtime. -->
+    <PackageReference Include="Nice3point.Revit.Api.RevitAPI" Version="2025.4.60" ExcludeAssets="runtime" PrivateAssets="all" />
+    <PackageReference Include="Nice3point.Revit.Api.RevitAPIUI" Version="2025.4.60" ExcludeAssets="runtime" PrivateAssets="all" />
   </ItemGroup>
 
   <ItemGroup>

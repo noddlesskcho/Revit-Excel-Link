@@ -199,12 +199,12 @@ namespace RevitScheduleSync.Revit.Styles
         }
 
         public static string FormatColor(Color color) =>
-            string.Create(CultureInfo.InvariantCulture, $"{color.Red},{color.Green},{color.Blue}");
+            string.Format(CultureInfo.InvariantCulture, "{0},{1},{2}", color.Red, color.Green, color.Blue);
 
         public static bool TryParseColor(string text, out Color color)
         {
             color = null!;
-            var parts = text.Split([',', ';'], StringSplitOptions.TrimEntries);
+            var parts = text.Split(',', ';').Select(p => p.Trim()).ToArray();
             if (parts.Length != 3)
             {
                 return false;

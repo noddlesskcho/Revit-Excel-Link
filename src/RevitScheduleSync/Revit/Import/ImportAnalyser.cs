@@ -116,7 +116,7 @@ namespace RevitScheduleSync.Revit.Import
 
             _logger.Info(
                 $"Import analysis: {items.Count} cells compared in {stopwatch.ElapsedMilliseconds} ms; " +
-                string.Join(", ", Enum.GetValues<ChangeStatus>().Select(s => (s, n: set.Count(s))).Where(x => x.n > 0).Select(x => $"{x.s} {x.n}")));
+                string.Join(", ", Enums.Values<ChangeStatus>().Select(s => (s, n: set.Count(s))).Where(x => x.n > 0).Select(x => $"{x.s} {x.n}")));
             return set;
         }
 

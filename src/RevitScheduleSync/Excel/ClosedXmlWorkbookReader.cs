@@ -400,7 +400,7 @@ namespace RevitScheduleSync.Excel
                 {
                     metadata.Sheets.Add(new SheetInfo(
                         row.Get("SheetName"), row.Get("ScheduleUniqueId"), row.Get("ScheduleName"),
-                        Enum.Parse<SheetMode>(row.Get("Mode")), Int(row.Get("HeaderRow")), Int(row.Get("FirstDataRow")),
+                        Enums.Parse<SheetMode>(row.Get("Mode")), Int(row.Get("HeaderRow")), Int(row.Get("FirstDataRow")),
                         // Schema 1 workbooks have no Source column: they only contain schedules.
                         Enum.TryParse<SheetSource>(row.Get("Source"), out var sheetSource) ? sheetSource : SheetSource.Schedule,
                         row.Get("AllowNewRows") == "true"));
@@ -408,7 +408,7 @@ namespace RevitScheduleSync.Excel
 
                 foreach (var row in Section(sections, WorkbookSchema.SectionColumns))
                 {
-                    var source = Enum.Parse<ParameterSource>(row.Get("ParameterSource"));
+                    var source = Enums.Parse<ParameterSource>(row.Get("ParameterSource"));
                     var identity = source == ParameterSource.None
                         ? ParameterIdentity.None
                         : new ParameterIdentity
@@ -423,8 +423,8 @@ namespace RevitScheduleSync.Excel
 
                     metadata.Columns.Add(new ColumnInfo(
                         row.Get("SheetName"), Int(row.Get("ExcelColumn")), Int(row.Get("FieldId")), row.Get("Heading"), row.Get("FieldType"),
-                        identity, row.Get("IsType") == "true", Enum.Parse<ValueStorage>(row.Get("Storage")),
-                        row.Get("SpecTypeId"), row.Get("ExportUnitTypeId"), Enum.Parse<CellKind>(row.Get("CellKind")),
+                        identity, row.Get("IsType") == "true", Enums.Parse<ValueStorage>(row.Get("Storage")),
+                        row.Get("SpecTypeId"), row.Get("ExportUnitTypeId"), Enums.Parse<CellKind>(row.Get("CellKind")),
                         row.Get("Editable") == "true", NullIfEmpty(row.Get("ReadOnlyReason")),
                         row.Get("RequiredForNewRows") == "true"));
                 }

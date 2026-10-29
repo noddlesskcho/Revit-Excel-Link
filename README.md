@@ -2,13 +2,26 @@
 
 Repository and assembly name: `RevitScheduleSync`.
 
-Revit 2025 / 2026 add-in for safe, auditable schedule ↔ Excel synchronisation: export schedules to .xlsx,
-edit values in Excel, then analyse, review and apply the changes back to the model.
+Add-in for Autodesk Revit **2024, 2025, 2026 and 2027** for safe, auditable Revit ↔ Excel synchronisation:
+export schedules and model data to .xlsx, edit values in Excel, then analyse, review and apply the changes back
+to the model.
 
-Status: **V1 (1.0.0)** — export, import analysis (three-way comparison), review, apply (one Undo step),
-report and history. See [docs/V1-checklist.md](docs/V1-checklist.md).
+## Download and install
 
-### Model data (in development, branch `feature/model-data-link`)
+Get the latest installer from [Releases](https://github.com/noddlesskcho/Revit-Excel-Link/releases/latest):
+
+- `RevitExcelLink-Setup-<version>.exe`: single-file installer, per user, no administrator rights.
+- `RevitExcelLink-<version>.zip`: unzip, then double-click `Install.cmd` (`Uninstall.cmd` removes it).
+
+Close Revit before installing. Both install the same bundle to
+`%APPDATA%\Autodesk\ApplicationPlugins\RevitExcelLink.bundle`; Revit picks the build for its own version.
+The **Revit-Excel Link** panel is on the Add-Ins tab. The window footer and button tooltip show the version
+with its build date and time.
+
+Features: export, import analysis (three-way comparison), review, apply (one Undo step), report and history.
+See [docs/V1-checklist.md](docs/V1-checklist.md).
+
+### Model data
 
 The **Model data** section exports model data that is not in a schedule. Every option is available to every
 user; nothing is licence-gated. Re-import uses the same **Import** section and review as schedules.
@@ -36,38 +49,63 @@ user; nothing is licence-gated. Re-import uses the same **Import** section and r
 
 ## Requirements
 
-- Revit 2026.5 (.NET 10) and/or Revit 2025 (.NET 8), Windows 64-bit. The core is built for both;
-  Revit 2025 loads it through `RevitScheduleSync.Loader`, which isolates ClosedXML in a private load context
-  (Revit 2025 has no add-in isolation; Dynamo for Revit 2025 ships an older DocumentFormat.OpenXml).
-- .NET 10 SDK (10.0.401 or later) to build
-- Microsoft Excel is **not** required
+| Revit | Add-in build | Loading |
+|---|---|---|
+| 2024 | .NET Framework 4.8 | loaded directly |
+| 2025 | .NET 8 | through `RevitScheduleSync.Loader`, which isolates ClosedXML in a private load context (Revit 2025 has no add-in isolation; Dynamo for Revit 2025 ships an older DocumentFormat.OpenXml) |
+| 2026 | .NET 8 (also runs on 2026 updates that host .NET 10) | isolated by Revit (`UseRevitContext=False`) |
+| 2027 | .NET 10 | isolated by Revit (`UseRevitContext=False`) |
+
+- Windows 64-bit. Microsoft Excel is **not** required.
+- To build: .NET 10 SDK (10.0.401 or later). Revit itself is not needed: the Revit API comes from the
+  `Nice3point.Revit.Api` reference packages.
 
 ## Build and develop
 
+One build per Revit version (default 2026):
+
 ```
-dotnet build RevitScheduleSync.sln -c Debug
+dotnet build src/RevitScheduleSync -c Debug -p:RevitVersion=2024
+dotnet build src/RevitScheduleSync.Loader -c Debug
 ```
 
-A Debug build copies the add-in to `%APPDATA%\Autodesk\Revit\Addins\2025\` and `\2026\` (close Revit first; the build
-warns "NOT deployed" if Revit holds the files). Skip with `-p:DeployToRevit=false`.
+A Debug build copies the add-in to `%APPDATA%\Autodesk\Revit\Addins\<version>\` (close Revit first; the build
+warns "NOT deployed" if Revit holds the files). Skip with `-p:DeployToRevit=false`. Revit 2025 needs both the core
+(`-p:RevitVersion=2025`) and the loader.
 
 ## Tests
 
 Revit-free logic (comparison, workbook layer, reports, review scoping, 20,000-row performance):
 
 ```
-dotnet test RevitScheduleSync.sln -c Release
+dotnet test tests/RevitScheduleSync.Tests -c Release -p:DeployToRevit=false
 ```
 
-## Release package (Autodesk App Store bundle)
+## Installers
 
 ```
 powershell -ExecutionPolicy Bypass -File packaging\build-package.ps1
 ```
 
-Produces `artifacts\ScheduleSyncForRevit.bundle` and `artifacts\ScheduleSyncForRevit-<version>.bundle.zip`.
-`-Install` copies the bundle to `%APPDATA%\Autodesk\ApplicationPlugins` for a local test (remove the development
-add-in first: both use the same AddInId). Listing draft: [docs/app-store-listing.md](docs/app-store-listing.md).
+Builds all four versions and produces in `artifacts\`:
+
+- `RevitExcelLink.bundle` (Autodesk bundle: `PackageContents.xml` + `Contents\2024` … `Contents\2027`)
+- `RevitExcelLink-<version>.zip` (bundle + `Install.cmd`, `Uninstall.cmd`, `README.txt`)
+- `RevitExcelLink-Setup-<version>.exe` when Inno Setup 6 is installed (`packaging\installer.iss`)
+
+`-Install` also installs the bundle for the current user. Installing removes older developer installs of this
+add-in (`Addins\<version>\RevitScheduleSync.addin`), because both use the same AddInId.
+
+### GitHub release
+
+Bump `<Version>` in `src/RevitScheduleSync/RevitScheduleSync.csproj` (and the loader), commit, then push a tag:
+
+```
+git tag v1.2.0
+git push origin v1.2.0
+```
+
+The **Build and release** workflow tests, builds both installers and attaches them to a new GitHub release.
 
 ## Source layout
 
@@ -81,11 +119,13 @@ src/RevitScheduleSync/
 ├── Excel/           workbook layout (WorkbookSchema), ClosedXML writer and reader
 ├── Sync/            pure comparison logic (three-way, fingerprint)
 ├── Services/        prompts, errors, report store, operations interface
-└── Logging/         ILogger, FileLogger
+├── Logging/         ILogger, FileLogger
+└── Compatibility/   .NET Framework 4.8 stand-ins (Revit 2024 build)
 src/RevitScheduleSync.Loader/    Revit 2025 entry point: loads the core into a private AssemblyLoadContext
 tests/RevitScheduleSync.Tests/   xUnit tests (no Revit)
 tools/IconExport/                renders the add-in icon to PNG for the package
-packaging/                       bundle manifest, add-in manifest, help, icons, build script
+packaging/                       bundle manifest, add-in manifests, installers, help, icons, build script
+.github/workflows/release.yml    CI: tag push builds installers and publishes a GitHub release
 ```
 
 ## Logs and reports

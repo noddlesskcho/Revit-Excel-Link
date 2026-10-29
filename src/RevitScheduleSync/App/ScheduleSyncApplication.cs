@@ -11,6 +11,9 @@ namespace RevitScheduleSync.App
     {
         public Result OnStartup(UIControlledApplication application)
         {
+#if NETFRAMEWORK
+            AssemblyResolver.Register();
+#endif
             var logger = new FileLogger(FileLogger.DefaultLogDirectory);
             AddinHost.Initialize(logger);
 
@@ -40,6 +43,9 @@ namespace RevitScheduleSync.App
         {
             AddinHost.Logger.Info($"{PluginInfo.ProductName} shutting down.");
             AddinHost.Shutdown();
+#if NETFRAMEWORK
+            AssemblyResolver.Unregister();
+#endif
             return Result.Succeeded;
         }
     }

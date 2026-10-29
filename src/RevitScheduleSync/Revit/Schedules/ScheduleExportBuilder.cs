@@ -508,7 +508,7 @@ namespace RevitScheduleSync.Revit.Schedules
                 return 2;
             }
 
-            return Math.Clamp((int)Math.Ceiling(-Math.Log10(accuracy.Value) - 1e-9), 0, 6);
+            return Math.Min(Math.Max((int)Math.Ceiling(-Math.Log10(accuracy.Value) - 1e-9), 0), 6);
         }
 
         private static string DecimalFormat(int decimals) => decimals == 0 ? "0" : "0." + new string('0', decimals);

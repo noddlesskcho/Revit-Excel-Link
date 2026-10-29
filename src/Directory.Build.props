@@ -1,0 +1,16 @@
+<Project>
+
+  <!--
+    One build per Revit version: dotnet build -p:RevitVersion=2024|2025|2026|2027 (default 2026).
+    Each version gets its own obj\ and bin\ folders, because 2025 and 2026 share a target framework
+    but reference different Revit API packages.
+  -->
+  <PropertyGroup>
+    <RevitVersion Condition="'$(RevitVersion)' == ''">2026</RevitVersion>
+    <BaseIntermediateOutputPath>obj\$(RevitVersion)\</BaseIntermediateOutputPath>
+    <BaseOutputPath>bin\$(RevitVersion)\</BaseOutputPath>
+    <!-- Keep the other versions' generated files out of this build. -->
+    <DefaultItemExcludes>$(DefaultItemExcludes);obj\**;bin\**</DefaultItemExcludes>
+  </PropertyGroup>
+
+</Project>

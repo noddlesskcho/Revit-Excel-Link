@@ -1,0 +1,58 @@
+name: Build and release
+
+# Push a tag such as v1.2.0 to build, test and publish a GitHub release with the installers.
+# Run manually (Actions > Build and release > Run workflow) to build the installers without releasing.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Check tag matches project version
+        if: startsWith(github.ref, 'refs/tags/')
+        shell: pwsh
+        run: |
+          $version = ([xml](Get-Content src/RevitScheduleSync/RevitScheduleSync.csproj -Raw)).Project.PropertyGroup.Version | Where-Object { $_ } | Select-Object -First 1
+          if ("v$version" -ne '${{ github.ref_name }}') { throw "Tag ${{ github.ref_name }} does not match project version $version." }
+
+      - name: Test
+        run: dotnet test tests/RevitScheduleSync.Tests -c Release -p:DeployToRevit=false
+
+      - name: Install Inno Setup
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe")) { choco install innosetup -y --no-progress }
+
+      - name: Build installers
+        shell: pwsh
+        run: ./packaging/build-package.ps1
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: installers
+          path: |
+            artifacts/RevitExcelLink-*.zip
+            artifacts/RevitExcelLink-Setup-*.exe
+          if-no-files-found: error
+
+      - name: Publish release
+        if: startsWith(github.ref, 'refs/tags/')
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = '${{ github.ref_name }}'
+          gh release create $tag (Get-ChildItem artifacts/RevitExcelLink-Setup-*.exe).FullName (Get-ChildItem artifacts/RevitExcelLink-*.zip).FullName `
+            --title "Revit-Excel Link $($tag.TrimStart('v'))" --notes-file packaging/release-notes.md --generate-notes

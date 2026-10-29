@@ -376,7 +376,7 @@ namespace RevitScheduleSync.Excel
                 {
                     // Measure a sample only: measuring every row is slow on large schedules.
                     column.AdjustToContents(WorkbookSchema.HeaderRow, sampleEnd);
-                    column.Width = Math.Clamp(column.Width + 2, MinColumnWidth, MaxColumnWidth);
+                    column.Width = Math.Min(Math.Max(column.Width + 2, MinColumnWidth), MaxColumnWidth);
                 }
                 catch (Exception ex)
                 {

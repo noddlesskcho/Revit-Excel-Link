@@ -80,7 +80,18 @@ namespace RevitScheduleSync.Excel
             try
             {
                 book.SaveAs(temp);
+#if NETFRAMEWORK
+                if (File.Exists(target))
+                {
+                    File.Replace(temp, target, null);
+                }
+                else
+                {
+                    File.Move(temp, target);
+                }
+#else
                 File.Move(temp, target, overwrite: true);
+#endif
                 _logger.Info($"Workbook saved: '{Path.GetFileName(target)}' ({new FileInfo(target).Length / 1024} KB).");
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)

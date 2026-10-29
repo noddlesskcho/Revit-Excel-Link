@@ -65,7 +65,7 @@ namespace RevitScheduleSync.Revit.Parameters
             }
 
             var unit = string.IsNullOrEmpty(column.ExportUnitTypeId) ? null : new ForgeTypeId(column.ExportUnitTypeId);
-            double exportValue;
+            double exportValue; // {xl:exportUnit}
 
             if (value.Number.HasValue)
             {
@@ -91,7 +91,7 @@ namespace RevitScheduleSync.Revit.Parameters
                 return ParsedValue.Invalid(value.Text, "Not a valid number.");
             }
 
-            double internalUnits = unit == null ? exportValue : UnitUtils.ConvertToInternalUnits(exportValue, unit);
+            double internalUnits = unit == null ? exportValue : UnitUtils.ConvertToInternalUnits(exportValue, unit); // {internal}
             return new ParsedValue(
                 exportValue.ToString("R", CultureInfo.InvariantCulture),
                 exportValue.ToString("0.######", CultureInfo.CurrentCulture),

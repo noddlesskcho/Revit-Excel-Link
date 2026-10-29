@@ -21,7 +21,7 @@
     <RootNamespace>RevitScheduleSync</RootNamespace>
     <AssemblyName>RevitScheduleSync</AssemblyName>
 
-    <Version>1.2.2</Version>
+    <Version>1.2.3</Version>
     <!-- Build date and time in the product version (window footer, ribbon tooltip, file properties),
          so the newest installed build is obvious. The SDK appends "+<commit>" after it. -->
     <BuildStamp>$([System.DateTime]::Now.ToString('yyyy-MM-dd HH:mm'))</BuildStamp>

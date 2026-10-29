@@ -77,7 +77,8 @@ namespace RevitScheduleSync.Revit.ModelData
             return found.Values
                 .Select(c => writable.Contains(c.Key) == !c.IsReadOnly ? c : new ParameterChoice
                 {
-                    Parameter = c.Parameter, IsType = c.IsType, Storage = c.Storage, IsReadOnly = !writable.Contains(c.Key), GroupName = c.GroupName
+                    Parameter = c.Parameter, IsType = c.IsType, Storage = c.Storage, IsReadOnly = !writable.Contains(c.Key), GroupName = c.GroupName,
+                    SpecTypeId = c.SpecTypeId
                 })
                 .OrderBy(c => c.IsType)
                 .ThenBy(c => c.Name, StringComparer.CurrentCultureIgnoreCase)
@@ -154,7 +155,8 @@ namespace RevitScheduleSync.Revit.ModelData
                         IsType = isType,
                         Storage = ToStorage(parameter.StorageType),
                         IsReadOnly = parameter.IsReadOnly,
-                        GroupName = GroupLabel(parameter)
+                        GroupName = GroupLabel(parameter),
+                        SpecTypeId = SpecOf(parameter)
                     };
 
                     found.TryAdd(choice.Key, choice);
@@ -167,6 +169,18 @@ namespace RevitScheduleSync.Revit.ModelData
                 {
                     _logger.Debug($"Parameter skipped on element {element.Id.Value}: {ex.GetType().Name}");
                 }
+            }
+        }
+
+        private static string SpecOf(Parameter parameter)
+        {
+            try
+            {
+                return parameter.Definition.GetDataType().TypeId;
+            }
+            catch (Exception)
+            {
+                return string.Empty;
             }
         }
 

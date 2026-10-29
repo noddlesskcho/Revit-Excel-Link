@@ -280,7 +280,13 @@ namespace RevitScheduleSync.Revit.ModelData
                 _ => string.Empty
             };
 
-            return ParameterValueReader.Text(text, text, text.Length > 0, text);
+            var cell = ParameterValueReader.Text(text, text, text.Length > 0, text);
+
+            // The Phase column is editable only for new rows: Revit cannot move an existing room or space to
+            // another phase, and import ignores this column on existing rows, so lock it there.
+            return key == "Phase"
+                ? cell with { ForceReadOnly = true, LockReason = "the phase of an existing room or space cannot be changed" }
+                : cell;
         }
 
         private ExportCell SafeRead(Parameter parameter, ExportColumn column, Element element)
@@ -342,14 +348,16 @@ namespace RevitScheduleSync.Revit.ModelData
         private ExportColumn ParameterColumn(int fieldId, string heading, ParameterChoice choice, Parameter? sample)
         {
             string specTypeId = string.Empty, specLabel = string.Empty, unitId = string.Empty, unitLabel = string.Empty;
-            bool measurable = false, yesNo = false;
+            bool measurable = false, yesNo = false, specFailed = false;
             double? accuracy = null;
 
-            if (sample != null)
+            // The export unit follows the parameter's data type. Taken from a sample on the exported elements,
+            // else from the catalog: without it a length would go to Excel in internal feet with no unit.
+            var spec = SpecOf(sample) ?? (string.IsNullOrEmpty(choice.SpecTypeId) ? null : new ForgeTypeId(choice.SpecTypeId));
+            if (spec != null)
             {
                 try
                 {
-                    var spec = sample.Definition.GetDataType();
                     specTypeId = spec.TypeId;
                     yesNo = spec == SpecTypeId.Boolean.YesNo;
                     if (UnitUtils.IsMeasurableSpec(spec))
@@ -364,9 +372,14 @@ namespace RevitScheduleSync.Revit.ModelData
                 }
                 catch (Exception)
                 {
-                    // Data type unavailable: treated as plain value.
+                    // Data type or unit unavailable: treated as plain value (and locked below if it is a number).
+                    specFailed = true;
                 }
             }
+
+            // A number whose data type (and so unit) could not be read is exported unconverted. Typing a display
+            // value back (e.g. mm) would be stored as feet, so such a column is read-only.
+            bool unitUnknown = choice.Storage == ValueStorage.Double && (spec == null || specFailed || (measurable && unitId.Length == 0));
 
             var field = new ScheduleFieldInfo
             {
@@ -394,10 +407,11 @@ namespace RevitScheduleSync.Revit.ModelData
                 IsCount = false,
                 IsRelatedElement = false,
                 DisplayType = string.Empty,
-                Classification = choice.IsReadOnly
+                Classification = choice.IsReadOnly || unitUnknown
                     ? FieldClassification.ReadOnlySystem
                     : choice.IsType ? FieldClassification.EditableType : FieldClassification.EditableInstance,
-                Reason = choice.IsReadOnly ? "Revit reports the parameter as read-only." : string.Empty
+                Reason = choice.IsReadOnly ? "Revit reports the parameter as read-only."
+                    : unitUnknown ? "Unit unknown: the value is in Revit internal units." : string.Empty
             };
 
             var column = ScheduleExportBuilder.MakeColumn(field, sheetEditable: true);
@@ -407,6 +421,19 @@ namespace RevitScheduleSync.Revit.ModelData
             }
 
             return column;
+        }
+
+        private static ForgeTypeId? SpecOf(Parameter? parameter)
+        {
+            try
+            {
+                var spec = parameter?.Definition.GetDataType();
+                return spec == null || spec.Empty() ? null : spec;
+            }
+            catch (Exception)
+            {
+                return null;
+            }
         }
 
         private static ExportColumn InfoColumn(ParameterIdentity identity, int fieldId) => new()

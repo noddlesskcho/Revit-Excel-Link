@@ -20,11 +20,26 @@ namespace RevitScheduleSync
 
         private static Assembly? Resolve(object? sender, ResolveEventArgs args)
         {
-            var name = new AssemblyName(args.Name).Name;
-            var path = Path.Combine(Folder, name + ".dll");
+            var requested = new AssemblyName(args.Name);
+            var path = Path.Combine(Folder, requested.Name + ".dll");
             if (!File.Exists(path))
             {
                 return null;
+            }
+
+            // This handler sees every failed load in Revit's AppDomain. Answer our own assemblies' requests, and
+            // other requests only when our copy is not older than the version asked for; anything else would
+            // hand another add-in a library it cannot use.
+            var requester = args.RequestingAssembly;
+            bool fromUs = requester != null && !requester.IsDynamic
+                && string.Equals(Path.GetDirectoryName(requester.Location), Folder, StringComparison.OrdinalIgnoreCase);
+            if (!fromUs && requested.Version != null)
+            {
+                var ours = AssemblyName.GetAssemblyName(path).Version;
+                if (ours == null || ours < requested.Version)
+                {
+                    return null;
+                }
             }
 
             foreach (var loaded in AppDomain.CurrentDomain.GetAssemblies())

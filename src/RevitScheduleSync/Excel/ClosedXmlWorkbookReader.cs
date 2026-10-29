@@ -89,8 +89,16 @@ namespace RevitScheduleSync.Excel
             try
             {
                 // ReadWrite sharing: the workbook may be open in Excel. Unsaved Excel edits are not visible here.
-                var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-                return new XLWorkbook(stream);
+                // Copied to memory and closed at once: XLWorkbook never closes a stream it is given, and an open
+                // handle would stop Excel from saving the file (Excel saves by replacing it).
+                var copy = new MemoryStream();
+                using (var file = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete))
+                {
+                    file.CopyTo(copy);
+                }
+
+                copy.Position = 0;
+                return new XLWorkbook(copy);
             }
             catch (IOException ex)
             {

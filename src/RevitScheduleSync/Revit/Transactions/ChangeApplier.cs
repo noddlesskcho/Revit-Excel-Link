@@ -226,7 +226,7 @@ namespace RevitScheduleSync.Revit.Transactions
             {
                 ValueStorage.String when parameter.StorageType == StorageType.String => parameter.Set(value.Text ?? string.Empty),
                 ValueStorage.Integer when parameter.StorageType == StorageType.Integer => parameter.Set(value.Integer!.Value),
-                ValueStorage.Double when parameter.StorageType == StorageType.Double => parameter.Set(value.Double!.Value),
+                ValueStorage.Double when parameter.StorageType == StorageType.Double => parameter.Set(value.Double!.Value), // {internal}
                 ValueStorage.ElementId when parameter.StorageType == StorageType.ElementId => parameter.Set(new ElementId(value.ElementIdValue!.Value)),
                 _ => false
             };
@@ -315,7 +315,7 @@ namespace RevitScheduleSync.Revit.Transactions
         {
             ValueStorage.String when parameter.StorageType == StorageType.String => parameter.Set(value.Text ?? string.Empty),
             ValueStorage.Integer when parameter.StorageType == StorageType.Integer => parameter.Set(value.Integer!.Value),
-            ValueStorage.Double when parameter.StorageType == StorageType.Double => parameter.Set(value.Double!.Value),
+            ValueStorage.Double when parameter.StorageType == StorageType.Double => parameter.Set(value.Double!.Value), // {internal}
             ValueStorage.ElementId when parameter.StorageType == StorageType.ElementId => parameter.Set(new ElementId(value.ElementIdValue!.Value)),
             _ => false
         };

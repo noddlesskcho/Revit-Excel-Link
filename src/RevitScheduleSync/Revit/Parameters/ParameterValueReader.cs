@@ -61,13 +61,14 @@ namespace RevitScheduleSync.Revit.Parameters
 
                 case StorageType.Double:
                 {
-                    double internalValue = parameter.AsDouble();
+                    double internalValue = parameter.AsDouble(); // {internal: ft, ft2, ft3, rad ...}
                     string raw = internalValue.ToString("R", CultureInfo.InvariantCulture);
                     if (!hasValue)
                     {
                         return Cell(null, raw, string.Empty, display, false);
                     }
 
+                    // {xl:exportUnit}; no export unit = not measurable, or spec unknown (then {internal}, see UNITS.md).
                     double exported = string.IsNullOrEmpty(exportUnitTypeId)
                         ? internalValue
                         : UnitUtils.ConvertFromInternalUnits(internalValue, new ForgeTypeId(exportUnitTypeId));

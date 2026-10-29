@@ -45,6 +45,12 @@ namespace RevitScheduleSync.Models
         public required bool IsReadOnly { get; init; }
         public required string GroupName { get; init; }
 
+        /// <summary>
+        /// The parameter's data type (ForgeTypeId.TypeId) as seen by the catalog; empty when unknown.
+        /// Used for the export unit when no exported element carries the parameter.
+        /// </summary>
+        public string SpecTypeId { get; init; } = string.Empty;
+
         /// <summary>Stable key across sessions (profiles store it).</summary>
         public string Key => $"{(IsType ? "T" : "I")}|{Parameter.Key}";
 

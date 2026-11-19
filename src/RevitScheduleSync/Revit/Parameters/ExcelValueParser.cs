@@ -72,24 +72,26 @@ namespace RevitScheduleSync.Revit.Parameters
             {
                 exportValue = value.Number.Value;
             }
-            else if (TryParseDouble(value.Text, out var typed, out var ambiguous) || ambiguous)
-            {
-                if (ambiguous)
-                {
-                    return ParsedValue.Invalid(value.Text, AmbiguousMessage);
-                }
-
-                exportValue = typed;
-            }
-            else if (!string.IsNullOrEmpty(column.SpecTypeId) && unit != null
-                     && UnitFormatUtils.TryParse(_units, new ForgeTypeId(column.SpecTypeId), value.Text, out var internalValue))
-            {
-                // Text with units ("3' 6\"", "900 mm"): Revit parses it into internal units.
-                exportValue = UnitUtils.ConvertFromInternalUnits(internalValue, unit);
-            }
             else
             {
-                return ParsedValue.Invalid(value.Text, "Not a valid number.");
+                switch (ParseText(value.Text, out exportValue))
+                {
+                    case NumberText.Result.Parsed:
+                        break;
+                    case NumberText.Result.Ambiguous:
+                        // Refused before Revit's own parser, which would read "1.234 mm" with the project's separators.
+                        return ParsedValue.Invalid(value.Text, AmbiguousMessage);
+                    default:
+                        if (string.IsNullOrEmpty(column.SpecTypeId) || unit == null
+                            || !UnitFormatUtils.TryParse(_units, new ForgeTypeId(column.SpecTypeId), value.Text, out var internalValue))
+                        {
+                            return ParsedValue.Invalid(value.Text, "Not a valid number.");
+                        }
+
+                        // Text with units ("3' 6\"", "900 mm"): Revit parses it into internal units.
+                        exportValue = UnitUtils.ConvertFromInternalUnits(internalValue, unit);
+                        break;
+                }
             }
 
             if (double.IsNaN(exportValue) || double.IsInfinity(exportValue))
@@ -117,9 +119,15 @@ namespace RevitScheduleSync.Revit.Parameters
             {
                 number = value.Number.Value;
             }
-            else if (!TryParseDouble(value.Text, out number, out var ambiguous))
+            else
             {
-                return ParsedValue.Invalid(value.Text, ambiguous ? AmbiguousMessage : "Not a valid whole number.");
+                switch (ParseText(value.Text, out number))
+                {
+                    case NumberText.Result.Ambiguous:
+                        return ParsedValue.Invalid(value.Text, AmbiguousMessage);
+                    case NumberText.Result.NotANumber:
+                        return ParsedValue.Invalid(value.Text, "Not a valid whole number.");
+                }
             }
 
             if (Math.Abs(number - Math.Round(number)) > 1e-9 || number < int.MinValue || number > int.MaxValue)
@@ -168,11 +176,7 @@ namespace RevitScheduleSync.Revit.Parameters
             "Ambiguous number: the separator could mean thousands or decimals. Type it without a thousands separator (e.g. 1234 or 1.5).";
 
         /// <summary>Number typed as text; see <see cref="NumberText"/>.</summary>
-        private static bool TryParseDouble(string text, out double value, out bool ambiguous)
-        {
-            var result = NumberText.TryParse(text, CultureInfo.CurrentCulture, out value);
-            ambiguous = result == NumberText.Result.Ambiguous;
-            return result == NumberText.Result.Parsed;
-        }
+        private static NumberText.Result ParseText(string text, out double value) =>
+            NumberText.TryParse(text, CultureInfo.CurrentCulture, out value);
     }
 }

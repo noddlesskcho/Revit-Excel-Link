@@ -170,7 +170,7 @@ namespace RevitScheduleSync.Revit.Import
                 }
                 catch (Exception ex)
                 {
-                    _logger.Warning($"Could not analyse '{column.Heading}' for element {element.Id.Value}.", ex);
+                    _logger.Warning($"Could not analyse '{column.Name}' for element {element.Id.Value}.", ex);
                     items.Add(NewItem(sheet, row, column, element, type, label, ChangeStatus.Invalid,
                         string.Empty, string.Empty, excel.Text, "Could not be analysed. See the log for details."));
                 }
@@ -536,7 +536,7 @@ namespace RevitScheduleSync.Revit.Import
             ElementId = row.ElementId,
             ElementLabel = label,
             FieldId = column.FieldId,
-            ParameterName = column.Heading,
+            ParameterName = column.Name,
             ParameterKey = column.Parameter.Key,
             Parameter = column.Parameter,
             Kind = column.Kind,
@@ -567,7 +567,7 @@ namespace RevitScheduleSync.Revit.Import
                 {
                     if (column.RequiredForNewRows)
                     {
-                        problems.Add($"\"{column.Heading}\" is required.");
+                        problems.Add($"\"{column.Name}\" is required.");
                     }
 
                     continue;
@@ -576,7 +576,7 @@ namespace RevitScheduleSync.Revit.Import
                 var parsed = _parser.Parse(excel, column);
                 if (!parsed.IsValid)
                 {
-                    problems.Add($"\"{column.Heading}\": {parsed.Error}");
+                    problems.Add($"\"{column.Name}\": {parsed.Error}");
                     continue;
                 }
 
@@ -599,7 +599,7 @@ namespace RevitScheduleSync.Revit.Import
                     name = parsed.Normalised;
                 }
 
-                values.Add(new NewElementValue(column.Parameter, column.Heading, column.Kind, column.ExportUnitTypeId,
+                values.Add(new NewElementValue(column.Parameter, column.Name, column.Kind, column.ExportUnitTypeId,
                     parsed.Display, parsed.Normalised, parsed.Target));
             }
 
@@ -648,7 +648,7 @@ namespace RevitScheduleSync.Revit.Import
             ElementId = element.Id.Value,
             ElementLabel = label,
             FieldId = column.FieldId,
-            ParameterName = column.Heading,
+            ParameterName = column.Name,
             ParameterKey = column.Parameter.Key,
             Parameter = column.Parameter,
             Kind = column.Kind,

@@ -515,18 +515,20 @@ namespace RevitScheduleSync.Revit.Schedules
 
         private static string DecimalFormat(int decimals) => decimals == 0 ? "0" : "0." + new string('0', decimals);
 
-        /// <summary>The unit's first symbol ("mm"), or empty when it has none.</summary>
+        /// <summary>
+        /// The unit's symbol for the header ("mm"), or empty when it has none. A symbol with letters is preferred,
+        /// so feet show as "ft" rather than "'"; a unit with only a sign ("°") keeps that sign.
+        /// </summary>
         private static string SafeUnitSymbol(ForgeTypeId unit)
         {
             try
             {
-                foreach (var symbol in FormatOptions.GetValidSymbols(unit))
-                {
-                    if (!symbol.Empty())
-                    {
-                        return LabelUtils.GetLabelForSymbol(symbol);
-                    }
-                }
+                var symbols = FormatOptions.GetValidSymbols(unit)
+                    .Where(s => !s.Empty())
+                    .Select(LabelUtils.GetLabelForSymbol)
+                    .Where(s => !string.IsNullOrWhiteSpace(s))
+                    .ToList();
+                return symbols.FirstOrDefault(s => s.Any(char.IsLetter)) ?? symbols.FirstOrDefault() ?? string.Empty;
             }
             catch (Exception)
             {

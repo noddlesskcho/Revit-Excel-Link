@@ -3,6 +3,8 @@ using System.Linq;
 using ClosedXML.Excel;
 using RevitScheduleSync.Excel;
 using RevitScheduleSync.Logging;
+using RevitScheduleSync.Models;
+using RevitScheduleSync.Models.Export;
 using RevitScheduleSync.Models.Import;
 using RevitScheduleSync.Services;
 using Xunit;
@@ -69,8 +71,47 @@ namespace RevitScheduleSync.Tests
 
             using var book = new XLWorkbook(path);
             var headers = book.Worksheet("Door Schedule").Row(WorkbookSchema.HeaderRow).CellsUsed().Select(c => c.GetString()).ToList();
-            Assert.Contains("Width [Millimeters]", headers);
+            Assert.Contains("Width [mm]", headers);
             Assert.Contains("Mark", headers);
+
+            var width = Read(path).Sheets[0].Columns.Single(c => c.FieldId == TestWorkbooks.WidthField);
+            Assert.Equal("Width [mm]", width.Heading);
+            Assert.Equal("Width", width.Name);
+        }
+
+        [Fact]
+        public void Header_falls_back_to_the_unit_label_without_a_symbol()
+        {
+            var column = TestWorkbooks.Column(2, TestWorkbooks.WidthField, "Width", "ElementType", TestWorkbooks.BuiltIn("Width", "DOOR_WIDTH"),
+                true, ValueStorage.Double, FieldClassification.EditableType, CellKind.Number, true,
+                unit: "autodesk.unit.unit:millimeters-1.0.1", symbol: "");
+            Assert.Equal("Width [Millimeters]", column.HeaderText);
+        }
+
+        [Fact]
+        public void Workbook_from_before_unit_headers_still_imports()
+        {
+            // Before 1.2.3 the header and the stored heading had no unit.
+            var path = TestWorkbooks.Write(TestWorkbooks.Doors(rows: 2));
+            using (var book = new XLWorkbook(path))
+            {
+                var metadata = book.Worksheet(WorkbookSchema.MetadataSheetName);
+                foreach (var cell in metadata.CellsUsed(c => c.GetString() == "Width [mm]"))
+                {
+                    cell.Value = "Width";
+                }
+
+                var sheet = book.Worksheet("Door Schedule");
+                sheet.Unprotect();
+                sheet.Row(WorkbookSchema.HeaderRow).CellsUsed(c => c.GetString() == "Width [mm]").Single().Value = "Width";
+                book.Save();
+            }
+
+            var workbook = Read(path);
+            var width = workbook.Sheets[0].Columns.Single(c => c.FieldId == TestWorkbooks.WidthField);
+            Assert.NotNull(width.ExcelColumn);
+            Assert.Equal("Width", width.Name);
+            Assert.Equal(914.4, Row(workbook, 1).Values[TestWorkbooks.WidthField].Number);
         }
 
         [Fact]

@@ -6,12 +6,15 @@ namespace RevitScheduleSync.Sync
     /// <summary>
     /// Reads a number typed as text in Excel (a text-formatted cell). Numbers in number cells never come here.
     /// "1.234" and "12,345" mean a thousand and more in one locale and a decimal in another, so they are refused
-    /// instead of guessed: a wrong guess would change the value by a factor of 1000.
+    /// instead of guessed: a wrong guess would change the value by a factor of 1000. The same applies when a unit
+    /// follows ("1.234 mm"), because Revit would read that with the project's own separators.
+    /// "0.500" is not refused: a thousands group never follows a leading zero.
     /// </summary>
     public static class NumberText
     {
-        // One to three digits, then groups of exactly three digits after a '.' or ','.
-        private static readonly Regex AmbiguousGrouping = new(@"^[+-]?\d{1,3}([.,]\d{3})+$", RegexOptions.CultureInvariant);
+        // One to three digits (not starting with 0), then groups of exactly three digits after a '.' or ',',
+        // then the end of the text or a unit.
+        private static readonly Regex AmbiguousGrouping = new(@"^[+-]?[1-9]\d{0,2}([.,]\d{3})+(?![\d.,])", RegexOptions.CultureInvariant);
 
         public enum Result
         {

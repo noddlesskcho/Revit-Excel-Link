@@ -115,7 +115,7 @@ namespace RevitScheduleSync.Tests
 
         internal static ExportColumn Column(int index, int fieldId, string heading, string fieldType, ParameterIdentity parameter,
             bool isType, ValueStorage storage, FieldClassification classification, CellKind kind, bool editable,
-            string? reason = null, string unit = "", string? format = null) => new()
+            string? reason = null, string unit = "", string? format = null, string symbol = "mm") => new()
         {
             Field = new ScheduleFieldInfo
             {
@@ -150,6 +150,7 @@ namespace RevitScheduleSync.Tests
             ReadOnlyReason = reason,
             ExportUnitTypeId = unit,
             ExportUnitLabel = unit.Length > 0 ? "Millimeters" : string.Empty,
+            ExportUnitSymbol = unit.Length > 0 ? symbol : string.Empty,
             NumberFormat = format
         };
 

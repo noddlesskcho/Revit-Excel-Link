@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using RevitScheduleSync.Models.Export;
 
 namespace RevitScheduleSync.Models.Import
@@ -43,8 +44,15 @@ namespace RevitScheduleSync.Models.Import
 
     public sealed class ImportColumn
     {
+        private static readonly Regex UnitSuffix = new(@"\s\[[^\[\]]*\]$", RegexOptions.CultureInvariant);
+
         public required int FieldId { get; init; }
+
+        /// <summary>Text of the Excel header cell, used to find a moved column. Includes the unit, e.g. "Width [mm]".</summary>
         public required string Heading { get; init; }
+
+        /// <summary>The heading without the " [unit]" suffix, for the review list and messages.</summary>
+        public string Name => string.IsNullOrEmpty(ExportUnitTypeId) ? Heading : UnitSuffix.Replace(Heading, string.Empty);
 
         /// <summary>Revit ScheduleFieldType name (Instance, ElementType, Count, Formula ...).</summary>
         public required string FieldType { get; init; }

@@ -6,12 +6,13 @@ namespace RevitScheduleSync.App
     /// <summary>Fixed identifiers and names used across the add-in.</summary>
     internal static class PluginInfo
     {
-        public const string ProductName = "Revit-Excel Link";
-        public const string RibbonTabName = "Revit-Excel Link";
-        public const string RibbonPanelName = "Excel";
+        public const string ProductName = "ScheduleDock";
+
+        /// <summary>Shared tab for all Pnyx add-ins; each tool adds its own panel.</summary>
+        public const string RibbonTabName = "Pnyx Tools";
+        public const string RibbonPanelName = ProductName;
         public const string OpenCommandButtonName = "RSS_OpenScheduleSync";
-        public const string OpenCommandButtonText = "Excel\nLink";
-        public const string InfoPanelName = "Help";
+        public const string OpenCommandButtonText = "Schedule\nDock";
         public const string AboutButtonName = "RSS_About";
         public const string AboutButtonText = "About";
 

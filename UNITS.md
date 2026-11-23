@@ -1,4 +1,4 @@
-# Units in Revit-Excel Link
+# Units in ScheduleDock
 
 How numeric values cross the Revit ↔ Excel boundary, and the vocabulary used in `// {unit}` code comments.
 

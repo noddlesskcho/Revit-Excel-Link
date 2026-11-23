@@ -1,18 +1,18 @@
 <#
 .SYNOPSIS
-  Builds the Revit-Excel Link bundle, the install zip and (when Inno Setup is available) the setup .exe,
+  Builds the ScheduleDock bundle, the install zip and (when Inno Setup is available) the setup .exe,
   for Revit 2024, 2025, 2026 and 2027.
 
 .DESCRIPTION
-  Release builds (no deployment) -> artifacts\RevitExcelLink.bundle -> validated -> packaged.
+  Release builds (no deployment) -> artifacts\ScheduleDock.bundle -> validated -> packaged.
 
   Bundle layout (loaded by Revit from %APPDATA%\Autodesk\ApplicationPlugins):
-    RevitExcelLink.bundle\
+    ScheduleDock.bundle\
       PackageContents.xml
-      Contents\2024\RevitExcelLink.addin, RevitScheduleSync.dll + dependencies (.NET Framework 4.8)
-      Contents\2025\RevitExcelLink.addin, RevitScheduleSync.Loader.dll, core\RevitScheduleSync.dll + dependencies
-      Contents\2026\RevitExcelLink.addin, RevitScheduleSync.dll + dependencies (.NET 8)
-      Contents\2027\RevitExcelLink.addin, RevitScheduleSync.dll + dependencies (.NET 10)
+      Contents\2024\ScheduleDock.addin, RevitScheduleSync.dll + dependencies (.NET Framework 4.8)
+      Contents\2025\ScheduleDock.addin, RevitScheduleSync.Loader.dll, core\RevitScheduleSync.dll + dependencies
+      Contents\2026\ScheduleDock.addin, RevitScheduleSync.dll + dependencies (.NET 8)
+      Contents\2027\ScheduleDock.addin, RevitScheduleSync.dll + dependencies (.NET 10)
       Contents\Resources\icon-*.png, help.html
       Contents\THIRD-PARTY-NOTICES.txt
 
@@ -20,8 +20,8 @@
   so it loads the small loader, which loads core\ and ClosedXML into a private AssemblyLoadContext.
 
   Outputs in artifacts\:
-    RevitExcelLink-<version>.zip         bundle + Install.cmd / Uninstall.cmd / README.txt
-    RevitExcelLink-Setup-<version>.exe   single-file installer (needs Inno Setup 6: ISCC.exe)
+    ScheduleDock-<version>.zip         bundle + Install.cmd / Uninstall.cmd / README.txt
+    ScheduleDock-Setup-<version>.exe   single-file installer (needs Inno Setup 6: ISCC.exe)
 
 .PARAMETER Install
   Also installs the bundle for the current user (same as running Install.cmd from the zip).
@@ -40,7 +40,7 @@ $project   = Join-Path $root 'src\RevitScheduleSync\RevitScheduleSync.csproj'
 $loader    = Join-Path $root 'src\RevitScheduleSync.Loader\RevitScheduleSync.Loader.csproj'
 $artifacts = Join-Path $root 'artifacts'
 $build     = Join-Path $artifacts 'build'
-$bundle    = Join-Path $artifacts 'RevitExcelLink.bundle'
+$bundle    = Join-Path $artifacts 'ScheduleDock.bundle'
 $years     = '2024', '2025', '2026', '2027'
 
 # dotnet: prefer the per-user .NET 10 SDK used for development.
@@ -49,7 +49,7 @@ if (-not (Test-Path $dotnet)) { $dotnet = 'dotnet' }
 
 $version = ([xml](Get-Content $project -Raw)).Project.PropertyGroup.Version | Where-Object { $_ } | Select-Object -First 1
 if (-not $version) { throw 'Version not found in RevitScheduleSync.csproj.' }
-Write-Host "Revit-Excel Link $version"
+Write-Host "ScheduleDock $version"
 
 # 1. Clean Release x64 builds, one per Revit version, never deployed to the developer's Revit folders.
 if (Test-Path $build) { Remove-Item $build -Recurse -Force }
@@ -87,7 +87,7 @@ foreach ($year in $years) {
     } else {
         Copy-Core -From (Join-Path $build $year) -To $contents
     }
-    Copy-Item (Join-Path $packaging $manifests[$year]) (Join-Path $contents 'RevitExcelLink.addin')
+    Copy-Item (Join-Path $packaging $manifests[$year]) (Join-Path $contents 'ScheduleDock.addin')
 }
 Get-ChildItem (Join-Path $packaging 'Resources') -File | Copy-Item -Destination $resources
 Copy-Item (Join-Path $packaging 'THIRD-PARTY-NOTICES.txt') (Join-Path $bundle 'Contents')
@@ -115,11 +115,11 @@ if (-not (Test-Path (Join-Path $bundle 'Contents\2024\ClosedXML.dll'))) { throw 
 # 4. Zip: bundle + installer scripts, ready to send.
 $staging = Join-Path $artifacts 'zip'
 if (Test-Path $staging) { Remove-Item $staging -Recurse -Force }
-$folder = Join-Path $staging "RevitExcelLink-$version"
+$folder = Join-Path $staging "ScheduleDock-$version"
 New-Item -ItemType Directory -Force $folder | Out-Null
 Copy-Item $bundle $folder -Recurse
 Get-ChildItem (Join-Path $packaging 'install') -File | Copy-Item -Destination $folder
-$zip = Join-Path $artifacts "RevitExcelLink-$version.zip"
+$zip = Join-Path $artifacts "ScheduleDock-$version.zip"
 if (Test-Path $zip) { Remove-Item $zip -Force }
 Compress-Archive -Path $folder -DestinationPath $zip
 $files = (Get-ChildItem $bundle -Recurse -File).Count
@@ -136,7 +136,7 @@ $iscc = @(
 if ($iscc) {
     & $iscc /Qp "/DAppVersion=$version" "/DBundleDir=$bundle" "/DOutputDir=$artifacts" (Join-Path $packaging 'installer.iss')
     if ($LASTEXITCODE -ne 0) { throw 'Inno Setup failed.' }
-    Write-Host "Setup:  $(Join-Path $artifacts "RevitExcelLink-Setup-$version.exe")"
+    Write-Host "Setup:  $(Join-Path $artifacts "ScheduleDock-Setup-$version.exe")"
 } else {
     Write-Warning 'Inno Setup 6 (ISCC.exe) not found: setup .exe skipped. The zip installer is complete.'
 }

@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!--
-    Revit-Excel Link - add-in core, built once per supported Revit version (-p:RevitVersion=...):
+    ScheduleDock - add-in core, built once per supported Revit version (-p:RevitVersion=...):
       2024 -> net48           (Revit 2024 hosts .NET Framework 4.8; loaded directly)
       2025 -> net8.0-windows  (loaded through RevitScheduleSync.Loader into a private AssemblyLoadContext,
                                because Revit 2025 has no add-in isolation)
@@ -21,13 +21,13 @@
     <RootNamespace>RevitScheduleSync</RootNamespace>
     <AssemblyName>RevitScheduleSync</AssemblyName>
 
-    <Version>1.2.4</Version>
+    <Version>1.3.0</Version>
     <!-- Build date and time in the product version (window footer, ribbon tooltip, file properties),
          so the newest installed build is obvious. The SDK appends "+<commit>" after it. -->
     <BuildStamp>$([System.DateTime]::Now.ToString('yyyy-MM-dd HH:mm'))</BuildStamp>
     <InformationalVersion>$(Version) build $(BuildStamp)</InformationalVersion>
-    <Product>Revit-Excel Link</Product>
-    <Company>Revit-Excel Link</Company>
+    <Product>ScheduleDock</Product>
+    <Company>Pnyx</Company>
 
     <!-- Plugin-style output: copy NuGet dependencies next to the add-in DLL and emit a .deps.json
          so the add-in load context (Revit 2026/2027, or our loader in 2025) can resolve ClosedXML and its dependencies. -->
@@ -132,9 +132,9 @@
       <_DeployManifestOk>$(MSBuildLastTaskResult)</_DeployManifestOk>
     </PropertyGroup>
     <Message Condition="'$(_DeployFilesOk)' == 'true' and '$(_DeployManifestOk)' == 'true'"
-             Importance="high" Text="Deployed Revit-Excel Link $(RevitVersion) to $(_DeployFolder)" />
+             Importance="high" Text="Deployed ScheduleDock $(RevitVersion) to $(_DeployFolder)" />
     <Warning Condition="'$(_DeployFilesOk)' != 'true' or '$(_DeployManifestOk)' != 'true'"
-             Text="Revit-Excel Link $(RevitVersion) was NOT deployed: the add-in files are in use (is Revit running?). Close Revit and build again." />
+             Text="ScheduleDock $(RevitVersion) was NOT deployed: the add-in files are in use (is Revit running?). Close Revit and build again." />
   </Target>
 
 </Project>

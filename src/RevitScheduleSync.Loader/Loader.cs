@@ -71,7 +71,7 @@ namespace RevitScheduleSync.Loader
         }
 
         internal static T CreateCore<T>(string typeName) where T : class =>
-            (T)Activator.CreateInstance((Core ?? throw new InvalidOperationException("Revit-Excel Link did not start.")).GetType(typeName, throwOnError: true)!)!;
+            (T)Activator.CreateInstance((Core ?? throw new InvalidOperationException("ScheduleDock did not start.")).GetType(typeName, throwOnError: true)!)!;
     }
 
     /// <summary>Ribbon command proxy. Transaction mode must match the core command (manual).</summary>
@@ -90,7 +90,7 @@ namespace RevitScheduleSync.Loader
             {
                 // The core command has its own error handling; this only covers a failed load.
                 LoaderLog.Write("Command failed to start: " + ex);
-                message = "Revit-Excel Link could not start. See %LOCALAPPDATA%\\RevitScheduleSync\\Logs\\loader.log.";
+                message = "ScheduleDock could not start. See %LOCALAPPDATA%\\RevitScheduleSync\\Logs\\loader.log.";
                 return Result.Failed;
             }
         }
@@ -111,7 +111,7 @@ namespace RevitScheduleSync.Loader
             catch (Exception ex)
             {
                 LoaderLog.Write("About failed to start: " + ex);
-                message = "Revit-Excel Link could not start. See %LOCALAPPDATA%\\RevitScheduleSync\\Logs\\loader.log.";
+                message = "ScheduleDock could not start. See %LOCALAPPDATA%\\RevitScheduleSync\\Logs\\loader.log.";
                 return Result.Failed;
             }
         }

@@ -43,8 +43,8 @@ jobs:
         with:
           name: installers
           path: |
-            artifacts/RevitExcelLink-*.zip
-            artifacts/RevitExcelLink-Setup-*.exe
+            artifacts/ScheduleDock-*.zip
+            artifacts/ScheduleDock-Setup-*.exe
           if-no-files-found: error
 
       - name: Publish release
@@ -54,5 +54,5 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           $tag = '${{ github.ref_name }}'
-          gh release create $tag (Get-ChildItem artifacts/RevitExcelLink-Setup-*.exe).FullName (Get-ChildItem artifacts/RevitExcelLink-*.zip).FullName `
-            --title "Revit-Excel Link $($tag.TrimStart('v'))" --notes-file packaging/release-notes.md --generate-notes
+          gh release create $tag (Get-ChildItem artifacts/ScheduleDock-Setup-*.exe).FullName (Get-ChildItem artifacts/ScheduleDock-*.zip).FullName `
+            --title "ScheduleDock $($tag.TrimStart('v'))" --notes-file packaging/release-notes.md --generate-notes

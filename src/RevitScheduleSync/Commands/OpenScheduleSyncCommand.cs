@@ -16,7 +16,7 @@ using RevitScheduleSync.UI.Views;
 namespace RevitScheduleSync.Commands
 {
     /// <summary>
-    /// Opens the Revit-Excel Link window.
+    /// Opens the ScheduleDock window.
     /// Manual transaction mode: the command itself never opens a transaction. The only transaction
     /// is opened by ChangeApplier in the import Apply step, after review and confirmation.
     /// </summary>
@@ -34,7 +34,7 @@ namespace RevitScheduleSync.Commands
                 var document = uiApplication.ActiveUIDocument?.Document;
                 if (document == null)
                 {
-                    TaskDialog.Show(PluginInfo.ProductName, "Open a Revit project before using Revit-Excel Link.");
+                    TaskDialog.Show(PluginInfo.ProductName, "Open a Revit project before using ScheduleDock.");
                     return Result.Cancelled;
                 }
 

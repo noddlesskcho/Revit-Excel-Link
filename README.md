@@ -1,6 +1,6 @@
-# Revit-Excel Link
+# ScheduleDock
 
-Repository and assembly name: `RevitScheduleSync`.
+Formerly **Revit-Excel Link** (renamed in 1.3.0). Repository and assembly name: `RevitScheduleSync`.
 
 Add-in for Autodesk Revit **2024, 2025, 2026 and 2027** for safe, auditable Revit ↔ Excel synchronisation:
 export schedules and model data to .xlsx, edit values in Excel, then analyse, review and apply the changes back
@@ -10,12 +10,12 @@ to the model.
 
 Get the latest installer from [Releases](https://github.com/noddlesskcho/Revit-Excel-Link/releases/latest):
 
-- `RevitExcelLink-Setup-<version>.exe`: single-file installer, per user, no administrator rights.
-- `RevitExcelLink-<version>.zip`: unzip, then double-click `Install.cmd` (`Uninstall.cmd` removes it).
+- `ScheduleDock-Setup-<version>.exe`: single-file installer, per user, no administrator rights.
+- `ScheduleDock-<version>.zip`: unzip, then double-click `Install.cmd` (`Uninstall.cmd` removes it).
 
 Close Revit before installing. Both install the same bundle to
-`%APPDATA%\Autodesk\ApplicationPlugins\RevitExcelLink.bundle`; Revit picks the build for its own version.
-The add-in has its own **Revit-Excel Link** ribbon tab. The window footer and button tooltip show the version
+`%APPDATA%\Autodesk\ApplicationPlugins\ScheduleDock.bundle`; Revit picks the build for its own version.
+ScheduleDock appears on the **Pnyx Tools** ribbon tab. The window footer and button tooltip show the version
 with its build date and time.
 
 Features: export, import analysis (three-way comparison), review, apply (one Undo step), report and history.
@@ -89,9 +89,9 @@ powershell -ExecutionPolicy Bypass -File packaging\build-package.ps1
 
 Builds all four versions and produces in `artifacts\`:
 
-- `RevitExcelLink.bundle` (Autodesk bundle: `PackageContents.xml` + `Contents\2024` … `Contents\2027`)
-- `RevitExcelLink-<version>.zip` (bundle + `Install.cmd`, `Uninstall.cmd`, `README.txt`)
-- `RevitExcelLink-Setup-<version>.exe` when Inno Setup 6 is installed (`packaging\installer.iss`)
+- `ScheduleDock.bundle` (Autodesk bundle: `PackageContents.xml` + `Contents\2024` … `Contents\2027`)
+- `ScheduleDock-<version>.zip` (bundle + `Install.cmd`, `Uninstall.cmd`, `README.txt`)
+- `ScheduleDock-Setup-<version>.exe` when Inno Setup 6 is installed (`packaging\installer.iss`)
 
 `-Install` also installs the bundle for the current user. Installing removes older developer installs of this
 add-in (`Addins\<version>\RevitScheduleSync.addin`), because both use the same AddInId.
@@ -130,14 +130,14 @@ packaging/                       bundle manifest, add-in manifests, installers, 
 
 ## Support
 
-For issues, contact **pynxsg@gmail.com**. The **About** button on the Revit-Excel Link tab has *Email support*
+For issues, contact **pynxsg@gmail.com**. The **About** button in the ScheduleDock panel (Pnyx Tools tab) has *Email support*
 (opens an email with version and Revit details), *Copy diagnostics* and *Open log folder*.
 
 ## Updates
 
 At Revit startup the add-in reads `https://github.com/noddlesskcho/Revit-Excel-Link/releases/latest` in the
 background (it follows nothing else and sends no model or user data). When a newer release exists, opening
-Revit-Excel Link shows a one-time notice with a link to the download page, and the About window shows
+ScheduleDock shows a one-time notice with a link to the download page, and the About window shows
 *Download*. Users close Revit and run the new installer, which replaces the old version.
 
 To publish an update: bump `<Version>`, commit, push a `v<version>` tag (see *GitHub release*).

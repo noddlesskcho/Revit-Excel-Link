@@ -72,7 +72,7 @@ namespace RevitScheduleSync.Services
                 // avoids the REST API, whose 60 requests/hour limit is shared by everyone behind one office IP.
                 using var handler = new HttpClientHandler { AllowAutoRedirect = false };
                 using var http = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(10) };
-                http.DefaultRequestHeaders.UserAgent.ParseAdd($"RevitExcelLink/{PluginInfo.NumericVersion}");
+                http.DefaultRequestHeaders.UserAgent.ParseAdd($"ScheduleDock/{PluginInfo.NumericVersion}");
 
                 using var response = await http.GetAsync(PluginInfo.LatestReleaseUrl).ConfigureAwait(false);
                 var location = response.Headers.Location;

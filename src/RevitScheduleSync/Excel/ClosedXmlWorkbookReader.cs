@@ -33,8 +33,8 @@ namespace RevitScheduleSync.Excel
             if (!book.Worksheets.TryGetWorksheet(WorkbookSchema.MetadataSheetName, out var metadataSheet))
             {
                 throw new ScheduleSyncException(
-                    "This workbook was not created by Revit-Excel Link, or its hidden metadata sheet was removed. " +
-                    "Only workbooks exported by Revit-Excel Link can be imported.");
+                    "This workbook was not created by ScheduleDock, or its hidden metadata sheet was removed. " +
+                    "Only workbooks exported by ScheduleDock can be imported.");
             }
 
             Metadata metadata;
@@ -399,7 +399,7 @@ namespace RevitScheduleSync.Excel
                 if (version > WorkbookSchema.SchemaVersion)
                 {
                     throw new ScheduleSyncException(
-                        $"This workbook was created by a newer version of Revit-Excel Link (format {version}). Update the add-in to import it.");
+                        $"This workbook was created by a newer version of ScheduleDock (format {version}). Update the add-in to import it.");
                 }
 
                 metadata.SchemaVersion = version;

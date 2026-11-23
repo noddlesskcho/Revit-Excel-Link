@@ -1,11 +1,12 @@
 <#
 .SYNOPSIS
-  Installs Revit-Excel Link for the current Windows user (Revit 2024, 2025, 2026 and 2027).
+  Installs ScheduleDock for the current Windows user (Revit 2024, 2025, 2026 and 2027).
 
 .DESCRIPTION
-  Copies RevitExcelLink.bundle (next to this script) to %APPDATA%\Autodesk\ApplicationPlugins.
+  Copies ScheduleDock.bundle (next to this script) to %APPDATA%\Autodesk\ApplicationPlugins.
   Revit loads it on its next start. No administrator rights are needed.
-  Older copies of the same add-in (developer installs or the former "Schedule Sync" bundle) are removed first,
+  Older copies of the same add-in (developer installs, or the former "Schedule Sync" and "Revit-Excel Link"
+  bundles) are removed first,
   because Revit refuses two add-ins with the same AddInId.
 
 .PARAMETER Uninstall
@@ -20,14 +21,16 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-$bundleName = 'RevitExcelLink.bundle'
+$bundleName = 'ScheduleDock.bundle'
 $plugins    = Join-Path $env:APPDATA 'Autodesk\ApplicationPlugins'
 $target     = Join-Path $plugins $bundleName
 
 function Remove-OldCopies {
-    # Former bundle name.
-    $old = Join-Path $plugins 'ScheduleSyncForRevit.bundle'
-    if (Test-Path $old) { Remove-Item $old -Recurse -Force; Write-Host "Removed old bundle: $old" }
+    # Former bundle names ("Schedule Sync", then "Revit-Excel Link" up to 1.2.x).
+    foreach ($name in 'ScheduleSyncForRevit.bundle', 'RevitExcelLink.bundle') {
+        $old = Join-Path $plugins $name
+        if (Test-Path $old) { Remove-Item $old -Recurse -Force; Write-Host "Removed old bundle: $old" }
+    }
 
     # Developer installs of this add-in (same AddInId) in the per-user Addins folders.
     foreach ($year in '2024', '2025', '2026', '2027') {
@@ -50,7 +53,7 @@ if (-not $Force -and (Get-Process -Name 'Revit' -ErrorAction SilentlyContinue)) 
 if ($Uninstall) {
     if (Test-Path $target) { Remove-Item $target -Recurse -Force }
     Remove-OldCopies
-    Write-Host 'Revit-Excel Link removed.'
+    Write-Host 'ScheduleDock removed.'
     exit 0
 }
 
@@ -70,6 +73,6 @@ Get-ChildItem $target -Recurse -File | Unblock-File
 
 $version = ([xml](Get-Content (Join-Path $target 'PackageContents.xml') -Raw)).ApplicationPackage.AppVersion
 Write-Host ''
-Write-Host "Revit-Excel Link $version installed for $env:USERNAME."
+Write-Host "ScheduleDock $version installed for $env:USERNAME."
 Write-Host "Location: $target"
-Write-Host 'Start Revit 2024, 2025, 2026 or 2027 and open the Revit-Excel Link tab on the ribbon.'
+Write-Host 'Start Revit 2024, 2025, 2026 or 2027 and open ScheduleDock on the Pnyx Tools tab of the ribbon.'

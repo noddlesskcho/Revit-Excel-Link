@@ -26,7 +26,7 @@ namespace RevitScheduleSync.UI
                 InitialDirectory = GetInitialDirectory(document)
             };
 
-            // No explicit owner: the active window is the modal Revit-Excel Link window.
+            // No explicit owner: the active window is the modal ScheduleDock window.
             return dialog.ShowDialog() == true ? dialog.FileName : null;
         }
 

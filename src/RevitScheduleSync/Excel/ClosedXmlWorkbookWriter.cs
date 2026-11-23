@@ -38,7 +38,7 @@ namespace RevitScheduleSync.Excel
             var sheetNames = workbook.Sheets.Select(s => names.Allocate(s.ScheduleName)).ToList();
 
             using var book = new XLWorkbook();
-            book.Properties.Title = $"Revit-Excel Link export — {workbook.Info.Fingerprint.Title}";
+            book.Properties.Title = $"ScheduleDock export — {workbook.Info.Fingerprint.Title}";
             book.Properties.Comments = "Edit only the white and yellow cells. Do not rename sheets or remove the hidden column A.";
 
             // Drop-down lists: created first so data validations can point at them.

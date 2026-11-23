@@ -16,13 +16,13 @@
     <LangVersion>latest</LangVersion>
     <RootNamespace>RevitScheduleSync.Loader</RootNamespace>
     <AssemblyName>RevitScheduleSync.Loader</AssemblyName>
-    <Version>1.2.4</Version>
+    <Version>1.3.0</Version>
     <!-- Build date and time in the product version (window footer, ribbon tooltip, file properties),
          so the newest installed build is obvious. The SDK appends "+<commit>" after it. -->
     <BuildStamp>$([System.DateTime]::Now.ToString('yyyy-MM-dd HH:mm'))</BuildStamp>
     <InformationalVersion>$(Version) build $(BuildStamp)</InformationalVersion>
-    <Product>Revit-Excel Link</Product>
-    <Company>Revit-Excel Link</Company>
+    <Product>ScheduleDock</Product>
+    <Company>Pnyx</Company>
     <MSBuildWarningsAsMessages>$(MSBuildWarningsAsMessages);MSB3277</MSBuildWarningsAsMessages>
     <GenerateDependencyFile>false</GenerateDependencyFile>
 
@@ -59,9 +59,9 @@
           DestinationFolder="$(RevitAddinsDir)"
           SkipUnchangedFiles="true" Retries="0" ContinueOnError="WarnAndContinue" />
     <Message Condition="'$(_LoaderOk)' == 'true' and '$(MSBuildLastTaskResult)' == 'true'"
-             Importance="high" Text="Deployed Revit-Excel Link 2025 loader to $(RevitAddinsDir)" />
+             Importance="high" Text="Deployed ScheduleDock 2025 loader to $(RevitAddinsDir)" />
     <Warning Condition="'$(_LoaderOk)' != 'true' or '$(MSBuildLastTaskResult)' != 'true'"
-             Text="Revit-Excel Link 2025 loader was NOT deployed: files in use (is Revit 2025 running?). Close Revit and build again." />
+             Text="ScheduleDock 2025 loader was NOT deployed: files in use (is Revit 2025 running?). Close Revit and build again." />
   </Target>
 
 </Project>

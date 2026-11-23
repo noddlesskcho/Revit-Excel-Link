@@ -104,7 +104,7 @@ namespace RevitScheduleSync.UI.ViewModels
         private void ExportReport(ImportReport report)
         {
             var path = _dialogs.ChooseReportPath(
-                $"Revit-Excel Link report {report.Time:yyyy-MM-dd HHmm} - {Path.GetFileNameWithoutExtension(report.DocumentTitle)}.csv");
+                $"ScheduleDock report {report.Time:yyyy-MM-dd HHmm} - {Path.GetFileNameWithoutExtension(report.DocumentTitle)}.csv");
             if (string.IsNullOrEmpty(path))
             {
                 return;

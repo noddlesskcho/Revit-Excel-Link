@@ -8,8 +8,9 @@ namespace RevitScheduleSync.App
     internal static class RibbonBuilder
     {
         /// <summary>
-        /// Adds the "Revit-Excel Link" ribbon tab with "Excel" and "Help" panels. If Revit refuses a new tab
-        /// (too many add-in tabs), both buttons go into one "Revit-Excel Link" panel on the Add-Ins tab instead.
+        /// Adds the "ScheduleDock" panel (ScheduleDock and About buttons) to the shared "Pnyx Tools" tab, creating
+        /// the tab unless another Pnyx add-in already did. If Revit refuses a new tab (too many add-in tabs), the
+        /// panel goes on the Add-Ins tab instead.
         /// </summary>
         public static void Build(UIControlledApplication application, ILogger logger)
         {
@@ -38,20 +39,19 @@ namespace RevitScheduleSync.App
 
             panel.AddItem(buttonData);
 
-            var help = ownTab ? application.CreateRibbonPanel(PluginInfo.RibbonTabName, PluginInfo.InfoPanelName) : panel;
-            help.AddItem(new PushButtonData(
+            panel.AddItem(new PushButtonData(
                 PluginInfo.AboutButtonName,
                 PluginInfo.AboutButtonText,
                 entry.AssemblyPath,
                 entry.AboutCommandClass)
             {
-                ToolTip = "Version, updates and support contact (" + PluginInfo.SupportEmail + ").",
+                ToolTip = "About " + PluginInfo.ProductName + ": version, updates and support contact (" + PluginInfo.SupportEmail + ").",
                 AvailabilityClassName = entry.AlwaysAvailableClass,
                 LargeImage = RibbonIcons.CreateAbout(32),
                 Image = RibbonIcons.CreateAbout(16)
             });
 
-            logger.Info($"Ribbon panels created on {(ownTab ? "the " + PluginInfo.RibbonTabName : "the Add-Ins")} tab (command: {entry.CommandClass}).");
+            logger.Info($"Ribbon panel created on {(ownTab ? "the " + PluginInfo.RibbonTabName : "the Add-Ins")} tab (command: {entry.CommandClass}).");
         }
 
         private static bool TryCreateTab(UIControlledApplication application, ILogger logger)
@@ -63,12 +63,12 @@ namespace RevitScheduleSync.App
             }
             catch (Autodesk.Revit.Exceptions.ArgumentException)
             {
-                // The tab already exists (created earlier in this session); reuse it.
+                // The tab already exists (created by another Pnyx add-in, or earlier in this session); reuse it.
                 return true;
             }
             catch (Exception ex)
             {
-                logger.Warning("Own ribbon tab not available; using the Add-Ins tab.", ex);
+                logger.Warning("Pnyx Tools ribbon tab not available; using the Add-Ins tab.", ex);
                 return false;
             }
         }

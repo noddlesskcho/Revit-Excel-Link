@@ -279,7 +279,7 @@ namespace RevitScheduleSync.UI.ViewModels
         }
 
         public string CategorySummary => Kind == ModelSourceKind.Selection && _operations.SelectionCount == 0
-            ? "Nothing is selected in Revit. Select elements, then open Revit-Excel Link again."
+            ? "Nothing is selected in Revit. Select elements, then open ScheduleDock again."
             : $"{Categories.Count(c => c.IsChecked)} of {Categories.Count} categories selected · {CheckedElementCount:N0} elements";
 
         public string ParameterSummary => $"{_available.Count} parameters found · {Selected.Count} selected";

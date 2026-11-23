@@ -332,7 +332,7 @@ namespace RevitScheduleSync.Excel
                 validation.IgnoreBlanks = true;
                 validation.ShowErrorMessage = true;
                 validation.ErrorStyle = XLErrorStyle.Stop;
-                validation.ErrorTitle = "Revit-Excel Link";
+                validation.ErrorTitle = "ScheduleDock";
                 return;
             }
 
@@ -362,7 +362,7 @@ namespace RevitScheduleSync.Excel
                 validation.IgnoreBlanks = true;
                 validation.ShowErrorMessage = true;
                 validation.ErrorStyle = XLErrorStyle.Stop;
-                validation.ErrorTitle = "Revit-Excel Link";
+                validation.ErrorTitle = "ScheduleDock";
             }
         }
 

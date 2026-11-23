@@ -35,7 +35,7 @@ namespace RevitScheduleSync.Revit.Transactions
         private readonly StyleAccess _styles;
         private readonly ReferenceResolver _references;
         private readonly List<string> _notes = [];
-        private string _undoName = "Revit-Excel Link import";
+        private string _undoName = "ScheduleDock import";
 
         public ChangeApplier(Document document, ILogger logger)
         {
@@ -55,7 +55,7 @@ namespace RevitScheduleSync.Revit.Transactions
             }
 
             // Shown in Revit's Undo list.
-            _undoName = $"Revit-Excel Link import ({Path.GetFileName(changes.Workbook.FilePath)})";
+            _undoName = $"ScheduleDock import ({Path.GetFileName(changes.Workbook.FilePath)})";
             var toWrite = changes.Items.Where(i => i.WillWrite).ToList();
             _logger.Info($"Apply started: {toWrite.Count} value(s) to write.");
 

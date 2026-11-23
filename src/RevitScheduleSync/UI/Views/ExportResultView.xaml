@@ -88,7 +88,7 @@
                         <TextBlock Style="{StaticResource Text.Body}" Margin="0,1"
                                    Text="•  Do not rename sheets, delete rows, or remove the hidden first column." />
                         <TextBlock Style="{StaticResource Text.Body}" Margin="0,1"
-                                   Text="•  Nothing has been written to the Revit model. Import with review arrives in a later phase." />
+                                   Text="•  Nothing has been written to the Revit model. When you have saved your edits, use the Import tab to review and apply them." />
                     </StackPanel>
                 </Border>
             </StackPanel>

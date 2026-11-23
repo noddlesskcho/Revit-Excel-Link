@@ -127,6 +127,9 @@ namespace RevitScheduleSync.Revit.Schedules
                     break;
                 case ScheduleFieldType.ViewBased:
                     (classification, reason) = (FieldClassification.ReadOnlySystem, "Value depends on view settings (e.g. room area).");
+                    // The storage decides the cell kind: without it a room area would be exported as raw internal
+                    // square feet with no unit, and every unchanged value would be flagged on import.
+                    storage = identity.Source == ParameterSource.None ? ValueStorage.None : ProbeStorage(identity, isType: false, sample);
                     break;
                 case ScheduleFieldType.Instance:
                 case ScheduleFieldType.ElementType:

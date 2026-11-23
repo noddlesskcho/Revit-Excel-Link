@@ -31,6 +31,14 @@ namespace RevitScheduleSync.Tests
         }
 
         [Fact]
+        public void Number_cut_to_15_digits_by_Excel_matches_only_as_a_number()
+        {
+            // Room area read back from Excel (15 significant digits) against Revit's round-trip text.
+            Assert.False(ValueComparer.AreEqual(CellKind.Text, "2233.64209970012", "2233.6420997001"));
+            Assert.True(ValueComparer.AreEqual(CellKind.Number, "2233.64209970012", "2233.6420997001"));
+        }
+
+        [Fact]
         public void Numbers_that_really_differ_are_changes() =>
             Assert.Equal(ThreeWay.ExcelChange, ValueComparer.Classify(CellKind.Number, "900", "900", "900.5"));
 

@@ -328,7 +328,13 @@ namespace RevitScheduleSync.Revit.Import
             }
 
             var current = ParameterValueReader.Read(parameter, column.Kind, column.ExportUnitTypeId, null);
-            if (ValueComparer.AreEqual(column.Kind, current.Normalised, excelText)
+
+            // A number in a text column (room area in workbooks from 1.3.0 and earlier) is compared as a number:
+            // Excel keeps 15 significant digits, so the text of an unchanged value differs from Revit's.
+            var compareAs = column.Kind == CellKind.Text && excel.Kind == ExcelValueKind.Number && current.Value is double
+                ? CellKind.Number
+                : column.Kind;
+            if (ValueComparer.AreEqual(compareAs, current.Normalised, excelText)
                 || (excel.IsBlank && current.Normalised.Length == 0))
             {
                 return null;
